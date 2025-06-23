@@ -1,10 +1,10 @@
-# --- VDN specific parameters ---
+# --- VDN特定参数 ---
 
-# use epsilon greedy action selector
+# 使用epsilon贪婪动作选择器
 action_selector: "epsilon_greedy"
 epsilon_start: 1.0
 epsilon_finish: 0.05
-epsilon_anneal_time: 100000  # 100000 # 50000 for 6h_vs_8z 这个参数会不会有影响，到10Wstep的时候，还让他一直探索？？
+epsilon_anneal_time: 100000  # 100000 # 6h_vs_8z为50000，这个参数会不会有影响，到10W步的时候，还让他一直探索？？
 
 #runner: "parallel"
 runner: "episode"
@@ -15,10 +15,10 @@ optimizer: 'adam'
 
 t_max: 1000000
 
-# update the target network every {} episodes
+# 每隔{}回合更新目标网络
 target_update_interval: 200
 
-# use the Q_Learner to train
+# 使用Q_Learner进行训练
 mac: "n_mac"
 agent: "n_rnn"
 agent_output_type: q
@@ -27,7 +27,7 @@ learner: "nq_learner"
 mixer: "vdn"
 mixing_embed_dim: 32
 hypernet_embed: 64
-lr: 0.001 # Learning rate for agents
+lr: 0.001 # 智能体学习率
 td_lambda: 0.6
 optimizer: 'adam'
 q_lambda: False
