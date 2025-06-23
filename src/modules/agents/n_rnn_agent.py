@@ -1,4 +1,3 @@
-
 import torch.nn as nn
 import torch.nn.functional as F
 import torch as th
@@ -24,7 +23,7 @@ class NRNNAgent(nn.Module):
             orthogonal_init_(self.fc2, gain=args.gain)
 
     def init_hidden(self):
-        # make hidden states on same device as model
+        # 使隐藏状态与模型在同一设备上
         return self.fc1.weight.new(1, self.args.rnn_hidden_dim).zero_()
 
     def forward(self, inputs, hidden_state):

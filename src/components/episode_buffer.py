@@ -48,13 +48,13 @@ class EpisodeBatch:
                 if "episode_const" in self.scheme[k]:
                     self.scheme[new_k]["episode_const"] = self.scheme[k]["episode_const"]
 
-        assert "filled" not in scheme, '"filled" is a reserved key for masking.'
+        assert "filled" not in scheme, '"filled"是用于掩码的保留键。'
         scheme.update({
             "filled": {"vshape": (1,), "dtype": th.long},
         })
 
         for field_key, field_info in scheme.items():
-            assert "vshape" in field_info, "Scheme must define vshape for {}".format(field_key)
+            assert "vshape" in field_info, "Scheme必须为{}定义vshape".format(field_key)
             vshape = field_info["vshape"]
             episode_const = field_info.get("episode_const", False)
             group = field_info.get("group", None)
@@ -64,7 +64,7 @@ class EpisodeBatch:
                 vshape = (vshape,)
 
             if group:
-                assert group in groups, "Group {} must have its number of members defined in _groups_".format(group)
+                assert group in groups, "组{}必须在_groups_中定义其成员数量".format(group)
                 shape = (groups[group], *vshape)
             else:
                 shape = vshape
@@ -97,7 +97,7 @@ class EpisodeBatch:
                 target = self.data.episode_data
                 _slices = slices[0]
             else:
-                raise KeyError("{} not found in transition or episode data".format(k))
+                raise KeyError("在transition或episode数据中找不到{}".format(k))
 
             dtype = self.scheme[k].get("dtype", th.float32)
             v = th.tensor(v, dtype=dtype, device=self.device)
@@ -116,7 +116,7 @@ class EpisodeBatch:
         for s in dest.shape[::-1]:
             if v.shape[idx] != s:
                 if s != 1:
-                    raise ValueError("Unsafe reshape of {} to {}".format(v.shape, dest.shape))
+                    raise ValueError("不安全的形状重塑 {} 到 {}".format(v.shape, dest.shape))
             else:
                 idx -= 1
 
@@ -136,9 +136,9 @@ class EpisodeBatch:
                 elif key in self.data.episode_data:
                     new_data.episode_data[key] = self.data.episode_data[key]
                 else:
-                    raise KeyError("Unrecognised key {}".format(key))
+                    raise KeyError("无法识别的键 {}".format(key))
 
-            # Update the scheme to only have the requested keys
+            # 更新scheme以只包含请求的键
             new_scheme = {key: self.scheme[key] for key in item}
             new_groups = {self.scheme[key]["group"]: self.groups[self.scheme[key]["group"]]
                           for key in item if "group" in self.scheme[key]}
@@ -173,24 +173,24 @@ class EpisodeBatch:
 
     def _parse_slices(self, items):
         parsed = []
-        # Only batch slice given, add full time slice
-        if (isinstance(items, slice)  # slice a:b
-            or isinstance(items, int)  # int i
+        # 仅给出批次切片，添加完整时间切片
+        if (isinstance(items, slice)  # 切片 a:b
+            or isinstance(items, int)  # 整数 i
             or (isinstance(items, (list, np.ndarray, th.LongTensor, th.cuda.LongTensor)))  # [a,b,c]
             ):
             items = (items, slice(None))
 
-        # Need the time indexing to be contiguous
+        # 时间索引需要是连续的
         if isinstance(items[1], list):
-            raise IndexError("Indexing across Time must be contiguous")
+            raise IndexError("时间索引必须是连续的")
 
         for item in items:
-            #TODO: stronger checks to ensure only supported options get through
+            #TODO: 更强的检查以确保只有支持的选项通过
             if isinstance(item, int):
-                # Convert single indices to slices
+                # 将单个索引转换为切片
                 parsed.append(slice(item, item+1))
             else:
-                # Leave slices and lists as is
+                # 保持切片和列表不变
                 parsed.append(item)
         return parsed
 
@@ -198,7 +198,7 @@ class EpisodeBatch:
         return th.sum(self.data.transition_data["filled"], 1).max(0)[0]
 
     def __repr__(self):
-        return "EpisodeBatch. Batch Size:{} Max_seq_len:{} Keys:{} Groups:{}".format(self.batch_size,
+        return "EpisodeBatch. 批次大小:{} 最大序列长度:{} 键:{} 组:{}".format(self.batch_size,
                                                                                      self.max_seq_length,
                                                                                      self.scheme.keys(),
                                                                                      self.groups.keys())
@@ -207,7 +207,7 @@ class EpisodeBatch:
 class ReplayBuffer(EpisodeBatch):
     def __init__(self, scheme, groups, buffer_size, max_seq_length, preprocess=None, device="cpu"):
         super(ReplayBuffer, self).__init__(scheme, groups, buffer_size, max_seq_length, preprocess=preprocess, device=device)
-        self.buffer_size = buffer_size  # same as self.batch_size but more explicit
+        self.buffer_size = buffer_size  # 与 self.batch_size 相同但更明确
         self.buffer_index = 0
         self.episodes_in_buffer = 0
 
@@ -236,7 +236,7 @@ class ReplayBuffer(EpisodeBatch):
         if self.episodes_in_buffer == batch_size:
             return self[:batch_size]
         else:
-            # Uniform sampling only atm
+            # 目前仅统一采样
             ep_ids = np.random.choice(self.episodes_in_buffer, batch_size, replace=False)
             return self[ep_ids]
 
@@ -246,20 +246,20 @@ class ReplayBuffer(EpisodeBatch):
     def sample_latest(self, batch_size):
         assert self.can_sample(batch_size)
         if self.buffer_index - batch_size < 0:
-            #Uniform sampling
+            #统一采样
             return self.uni_sample(batch_size)
         else:
-            # Return the latest
+            # 返回最新的
             return self[self.buffer_index - batch_size : self.buffer_index]
 
     def __repr__(self):
-        return "ReplayBuffer. {}/{} episodes. Keys:{} Groups:{}".format(self.episodes_in_buffer,
+        return "ReplayBuffer. {}/{} episodes. 键:{} 组:{}".format(self.episodes_in_buffer,
                                                                         self.buffer_size,
                                                                         self.scheme.keys(),
                                                                         self.groups.keys())
 
 
-# Adapted from the OpenAI Baseline implementations (https://github.com/openai/baselines)
+# 改编自OpenAI Baseline实现 (https://github.com/openai/baselines)
 class PrioritizedReplayBuffer(ReplayBuffer):
     def __init__(self, scheme, groups, buffer_size, max_seq_length, alpha, beta, t_max, preprocess=None, device="cpu"):
         super(PrioritizedReplayBuffer, self).__init__(scheme, groups, buffer_size, max_seq_length,
@@ -278,7 +278,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         self._it_min = MinSegmentTree(it_capacity)
 
     def insert_episode_batch(self, ep_batch):
-        # TODO: convert batch/episode to idx?
+        # TODO: 将batch/episode转换为idx？
         pre_idx = self.buffer_index
         super().insert_episode_batch(ep_batch)
         idx = self.buffer_index
@@ -322,17 +322,15 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         return self[idxes], idxes, weights
 
     def update_priorities(self, idxes, priorities):
-        """Update priorities of sampled transitions.
-        sets priority of transition at index idxes[i] in buffer
-        to priorities[i].
-        Parameters
+        """更新采样转换的优先级。
+        将缓冲区中索引idxes[i]处的转换优先级
+        设置为priorities[i]。
+        参数
         ----------
         idxes: [int]
-            List of idxes of sampled transitions
+            采样转换的索引列表
         priorities: [float]
-            List of updated priorities corresponding to
-            transitions at the sampled idxes denoted by
-            variable `idxes`.
+            对应于变量`idxes`表示的采样idxes处转换的更新优先级列表。
         """
         assert len(idxes) == len(priorities)
         for idx, priority in zip(idxes, priorities):

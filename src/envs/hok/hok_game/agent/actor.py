@@ -7,7 +7,7 @@ from protocol.python.common_pb2 import *
 from conf.config import NC_CONFIG
 import random
 
-#技能类型
+# 技能类型
 SKILL_TYPE = ["obj_skill", "dir_skill", "pos_skill", "talent_skill"]
 
 

@@ -19,9 +19,9 @@ from conf.config import NC_CONFIG, GC_CONFIG
 
 class NatureClient:
     """
-    NatureClient is a middleware that bridges AI Server and Game Core:
-        - receives frame information from game core and send it to ai server
-        - receives command from ai server and send it back to game core
+    NatureClient 是连接 AI 服务器和游戏核心的中间件:
+        - 从游戏核心接收帧信息并发送给 AI 服务器
+        - 从 AI 服务器接收指令并发送回游戏核心
     """
 
     def __init__(self, client_id, logger=None, max_frame=20000):

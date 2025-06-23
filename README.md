@@ -1,103 +1,104 @@
-# Introduction
+# 简介
 
-## Preface
+## 前言
 
-Tencent Multi-Agent Mini Environment is an open environment built based on video game, which allows researchers to develop and verify multi-agent algorithms using only local computing power.
+腾讯多智能体迷你环境是一个基于电子游戏构建的开放环境，让研究人员能够仅使用本地算力开发和验证多智能体算法。
 
-In the Tencent Multi-Agent Mini Environment, you need to train multiple heroes to fight against wild monsters through algorithms. At the end of the task, the remaining health of the wild monsters will be used as the evaluation metric. In the development guide, we have provided examples of how to integrate four algorithms, VDN, QMIX, QATTEN, and QPLEX, into the environment, and showed some experimental results. Finally, example code for VDN is provided in the code package.
+在腾讯多智能体迷你环境中，你需要通过算法训练多个英雄与野怪战斗。任务结束时，野怪的剩余血量将作为评估指标。在开发指南中，我们提供了如何将VDN、QMIX、QATTEN和QPLEX四种算法集成到环境中的示例，并展示了一些实验结果。最后，代码包中提供了VDN的示例代码。
 
-## News
-[2025/4]Docker images installation address changes.
+## 新闻
+[2025/4]Docker镜像安装地址变更。
 
-[2025/2]Fixed the issue where Zhuang Zhou's resources were incorrectly loaded and could not respond to actions correctly.
+[2025/2]修复了庄周资源加载错误导致无法正确响应动作的问题。
 
 ---
 
-## Environment Introduction
+## 环境介绍
 
-### Map
-Our Environment contains agent heroes and wild monsters. The distribution of agent heroes and wild monsters is shown in the figure below, where blue dots represent agent heroes and red dots represent wild monsters. At the beginning of the task, agent heroes and wild monsters will be automatically generated at the designated positions.
+### 地图
+我们的环境包含智能体英雄和野怪。智能体英雄和野怪的分布如下图所示，蓝点代表智能体英雄，红点代表野怪。任务开始时，智能体英雄和野怪将自动在指定位置生成。
 ![alt text](./static/img/multi_agent_mini_lv.png)
 
-### Heroes
-| Name | ID | Health | Normal Attack Range | Skill Type 1 | Skill Type 2 | Skill Type 3 |
+### 英雄
+| 名称 | ID | 血量 | 普攻范围 | 技能类型1 | 技能类型2 | 技能类型3 |
 | :--: | --: | :----: | :------------: | :--------: | :--------: | :--------: |
-| **Zhuang Zhou** | 11301 | 7738 | 2800 | Directional Skill | Directional Skill | Targeted Skill (Self-Released) |
-| **Di Renjie** | 13301 | 5706 | 8000 | Directional Skill | Directional Skill | Directional Skill |
-| **Diao Chan** | 14101 | 5609 | 6000 | Directional Skill | Directional Skill | Targeted Skill (Self-Released) |
-| **Sun Wukong** | 16701 | 7843 | 3000 | Targeted Skill (Self-Released) | Directional Skill | Targeted Skill (Self-Released) |
-| **Cao Cao** | 12801 | 8185 | 2800 | Directional Skill | Directional Skill | Targeted Skill (Self-Released) |
-### Wild Monsters
+| **庄周** | 11301 | 7738 | 2800 | 方向性技能 | 方向性技能 | 目标技能（自释放） |
+| **狄仁杰** | 13301 | 5706 | 8000 | 方向性技能 | 方向性技能 | 方向性技能 |
+| **貂蝉** | 14101 | 5609 | 6000 | 方向性技能 | 方向性技能 | 目标技能（自释放） |
+| **孙悟空** | 16701 | 7843 | 3000 | 目标技能（自释放） | 方向性技能 | 目标技能（自释放） |
+| **曹操** | 12801 | 8185 | 2800 | 方向性技能 | 方向性技能 | 目标技能（自释放） |
+
+### 野怪
 <table>
   <tr>
     <th>ID</th>
     <td>12202</td>
   </tr>
   <tr>
-    <th>Health</th>
+    <th>血量</th>
     <td>30000</td>
   </tr>
 </table>
 
-[Here](https://kaiwu-assets-1258344700.file.myqcloud.com/fe-assets/kaiwu-doc/open-competition-2024/multiagent/mini-hok-demo.mp4) is a video showing different monsters.
+[这里](https://kaiwu-assets-1258344700.file.myqcloud.com/fe-assets/kaiwu-doc/open-competition-2024/multiagent/mini-hok-demo.mp4)是一个展示不同怪物的视频。
 
 ---
 
-## Environment Usage
+## 环境使用
 
-### Installation Requirements
-> If using a Linux system, you can ignore the installation requirements and proceed directly to the next step
+### 安装要求
+> 如果使用Linux系统，可以忽略安装要求，直接进行下一步
 
 1. Windows 10/11
-2. Python 3.8 or higher
-3. Docker. If Docker is not installed on your computer, please follow the [guide](#docker) to complete the installation.
+2. Python 3.8或更高版本
+3. Docker。如果你的电脑上没有安装Docker，请按照[指南](#docker)完成安装。
 
-### Apply for License
-Please fill out the [Tencent AI Arena Multi-Agent Minitask Environment License Application Form](https://docs.qq.com/form/page/DVGR3Vk9Jb29lRW9H).
+### 申请许可证
+请填写[腾讯AI竞技场多智能体迷你任务环境许可证申请表](https://docs.qq.com/form/page/DVGR3Vk9Jb29lRW9H)。
 
-After receiving your application information, we will review it as soon as possible. Once approved, you will receive the license file via the email address provided in the application form.
+收到你的申请信息后，我们将尽快审核。通过审核后，你将通过申请表中提供的邮箱地址收到许可证文件。
 
-### Gamecore Installation
-1. Start Docker and enter the following commands in the command line:
+### 游戏核心安装
+1. 启动Docker并在命令行中输入以下命令：
 ```shell   
-  # Pull the Docker image
+  # 拉取Docker镜像
   docker pull tencentailab/marl-mini:gamecore_20250228
-  # Check the image ID
+  # 检查镜像ID
   docker images
-  # Enter the development container, replace IMAGEID with the ID of the image
+  # 进入开发容器，将IMAGEID替换为镜像的ID
   docker run -it --rm --name "Env_Name" IMAGEID /bin/bash
-  # Query the GameCore container IP address
+  # 查询GameCore容器IP地址
   ifconfig
 ```
-2. Please copy the `license.dat` file ([file obtained in the license application step](#apply-for-license)) to the `/sgame/` path in the successfully started Docker container.
+2. 请将`license.dat`文件（[许可证申请步骤中获得的文件](#apply-for-license)）复制到成功启动的Docker容器的`/sgame/`路径中。
 
-### Sample Code Installation
-1. Start Docker and enter the following commands in the command line:
+### 示例代码安装
+1. 启动Docker并在命令行中输入以下命令：
 ```shell   
-  # Pull the Docker image
+  # 拉取Docker镜像
   docker pull tencentailab/marl-mini:20240607
-  # Enter the development container, replace IMAGEID with the ID of the image
+  # 进入开发容器，将IMAGEID替换为镜像的ID
   docker run -it --name "Demo_Name" IMAGEID /bin/bash
-  # Clone the github code
+  # 克隆github代码
   git clone https://github.com/tencent-ailab/marl-hok.git
 ```
-2. Code placement directory: `/home/ubuntu/marl-hok`
+2. 代码放置目录：`/home/ubuntu/marl-hok`
 
-### Environment Startup
+### 环境启动
 
-#### Gamecore Communication Configuration
-Before starting the environment, please configure the IP in the sample code configuration file.
+#### 游戏核心通信配置
+启动环境前，请在示例代码配置文件中配置IP。
 
-Configuration file directory: `./src/envs/hok/hok_game/conf/gamecore_conf.json`
+配置文件目录：`./src/envs/hok/hok_game/conf/gamecore_conf.json`
 
-Query the GameCore container IP address and modify the endpoint field in the sample code container's configuration file to **IP address**: 3030.
+查询GameCore容器IP地址，并将示例代码容器配置文件中的endpoint字段修改为**IP地址**:3030。
 
 ```shell 
-# Open the configuration file
+# 打开配置文件
 vim ./src/envs/hok/hok_game/conf/gamecore_conf.json
 ```
 ```shell
-# Configuration file content 
+# 配置文件内容
 {
     "battlesrv_port": 5555,
     "endpoint": "127.0.0.2:3030",
@@ -108,78 +109,77 @@ vim ./src/envs/hok/hok_game/conf/gamecore_conf.json
 }
 ```
 
-#### Start Training
-1. Start the GameCore environment. After entering the Docker container, the following command will be automatically executed in the sgame directory:
+#### 开始训练
+1. 启动GameCore环境。进入Docker容器后，将在sgame目录下自动执行以下命令：
 ```shell
 ./ugc_game_core_server
-# After successful startup, the output will be: UGC GameCore Server started. listen port: 3030
+# 成功启动后，输出将显示：UGC GameCore Server started. listen port: 3030
 ```
-2. Start the sample code
+2. 启动示例代码
 ```shell
 cd /home/ubuntu/marl-hok
 python3 src/main.py --config="vdn" --env-config="hok" with "env_args.map_name=hok"
-# Where the --config parameter is followed by the corresponding algorithm, currently supporting the VDN algorithm
+# 其中--config参数后跟相应的算法，目前支持VDN算法
 ```
 
-#### Model Saving
-1. The model during training will be saved to the path ./results/models
+#### 模型保存
+1. 训练期间的模型将保存到路径./results/models
 
+#### 评估
+1. 在文件./src/config/default.yaml中设置checkpoint_path:的值为要加载的模型所在的路径
 
-#### Evaluation
-1. Set the value of checkpoint_path: in the file ./src/config/default.yaml to the path where the model to be loaded is located
-
-2. Execute
+2. 执行
 ```shell
 python3 src/main.py --config="vdn" --env-config="hok" with "env_args.map_name=hok"
-# Where the --config parameter is followed by the corresponding algorithm, currently supporting the VDN algorithm
+# 其中--config参数后跟相应的算法，目前支持VDN算法
 ```
 
-# Tools Install
+# 工具安装
 
 ## Docker
 
-Below, we will introduce how to install and use Docker on a Windows system. For more information about Docker, please refer to the [Docker official documentation](https://docs.docker.com/).
+下面我们将介绍如何在Windows系统上安装和使用Docker。有关Docker的更多信息，请参考[Docker官方文档](https://docs.docker.com/)。
 
-**1. Download the installation package**
+**1. 下载安装包**
 
-Official download link: https://www.docker.com/get-started/
+官方下载链接：https://www.docker.com/get-started/
 
-**2. Install**
+**2. 安装**
 
-2.1 Open the downloaded installation package and install with the default options checked.
+2.1 打开下载的安装包，使用默认选项进行安装。
 
 ![alt text](./static/img/docker_install1.png)
 
-2.2 After the installation is complete, open the Docker Desktop client on the desktop. The first time you run it, you need to click [Accept] to agree to the agreement, then click [Skip] to skip the Docker survey, and then you can start running.
+2.2 安装完成后，在桌面上打开Docker Desktop客户端。第一次运行时，需要点击[Accept]同意协议，然后点击[Skip]跳过Docker调查，之后就可以开始运行。
 
 ![alt text](./static/img/docker_install2.png)
 ![alt text](./static/img/docker_install3.png)
 
-2.3 Open Docker and wait for a while, you can see in the lower left corner that the Docker status is running, indicating that Docker has started successfully.
+2.3 打开Docker并等待一段时间，可以在左下角看到Docker状态为运行中，表示Docker已成功启动。
 
 ![alt text](./static/img/docker_running.png) alt="docker_running" width="50%"
 
-**3. Update WSL 2 Kernel**
+**3. 更新WSL 2内核**
 
-If you see the prompt below after running Docker for the first time, you need to update the WSL 2 kernel. Please follow the steps below
+如果在第一次运行Docker后看到以下提示，需要更新WSL 2内核。请按照以下步骤操作
 
 ![alt text](./static/img/docker_install4.png) 
 
-3.1 Visit the website prompted in the pop-up window (for the Chinese page, you can [click here to view](https://docs.microsoft.com/zh-cn/windows/wsl/install-manual#step-4---download-the-linux-kernel-update-package)), find step 4 on the opened page, and download the installation package shown below.
+3.1 访问弹窗中提示的网站（中文页面，可以[点击这里查看](https://docs.microsoft.com/zh-cn/windows/wsl/install-manual#step-4---download-the-linux-kernel-update-package)），在打开的页面中找到第4步，下载如下所示的安装包。
   ![alt text](./static/img/wsl-1.png)
 
-3.2 After the download is complete, run the WSL installation package.
+3.2 下载完成后，运行WSL安装包。
   ![alt text](./static/img/wsl-2.png)
   ![alt text](./static/img/wsl-3.png)
 
-3.3 After the installation is complete, click Finish.
+3.3 安装完成后，点击Finish。
   ![alt text](./static/img/wsl-4.png)
 
-3.4 Open the Windows system terminal. You can press the `Windows key + R` combination to open the Run window, enter `cmd` in the Run window and press Enter, and the Windows system terminal will open. (Alternatively, you can search for "Command Prompt" in the search box at the bottom left corner of your computer, and then click the search result to enter the terminal.)
+3.4 打开Windows系统终端。你可以按`Windows键 + R`组合键打开运行窗口，在运行窗口中输入`cmd`并按回车，Windows系统终端将打开。（或者，你可以在电脑左下角的搜索框中搜索"命令提示符"，然后点击搜索结果进入终端。）
 
 ![alt text](./static/img/wsl-6.png)
 
-3.5 Set WSL 2 as the default version. Copy the command below, then paste the copied code into the terminal and press Enter. At this point, you will see a message in the terminal indicating that the operation was successful.
+3.5 将WSL 2设置为默认版本。复制下面的命令，然后将复制的代码粘贴到终端中并按回车。此时，你将在终端中看到操作成功的消息。
 
 ```powershell
 wsl --set-default-version 2
@@ -187,39 +187,39 @@ wsl --set-default-version 2
 
 ![alt text](./static/img/wsl-8.png)
 
-3.6 Finally, perform a WSL update. Similarly, enter the command below in the terminal and press Enter to complete the operation. (**Note: This operation must be performed on Windows 11 systems**)
+3.6 最后，执行WSL更新。同样，在终端中输入下面的命令并按回车完成操作。（**注意：此操作必须在Windows 11系统上执行**）
 
 ```powershell
 wsl --update
 ```
 
-For more information about WSL 2, please refer to the [Microsoft official documentation](https://docs.microsoft.com/zh-cn/windows/wsl/install-manual).
+有关WSL 2的更多信息，请参考[微软官方文档](https://docs.microsoft.com/zh-cn/windows/wsl/install-manual)。
 
 ---
 
-## ABS Player
-After completing an evaluation task using the model, an ABS recording file will be generated. The ABS playback file can be viewed and visually analyzed using the ABS player provided by Tencent Kaixue.
+## ABS播放器
+使用模型完成评估任务后，将生成ABS录制文件。ABS播放文件可以使用腾讯开悟提供的ABS播放器进行查看和可视化分析。
 
-[ABS Player Download Address](https://drive.weixin.qq.com/s?k=AJEAIQdfAAomyhtflp)
+[ABS播放器下载地址](https://drive.weixin.qq.com/s?k=AJEAIQdfAAomyhtflp)
 
-Instructions for use:
-1. The current ABS player only supports Windows systems and it is recommended to run it on Windows 10.
-2. After downloading the ABS player, it needs to be extracted, and the extraction path cannot include Chinese characters. After extraction, double-click the `ABSTool.exe` file to update and then it can be used.
-3. After obtaining the ABS recording file, you need to move the ABS file to the `ABSTool/Replays` directory. If there is no Replays folder, please start `ABSTool.exe` once first.
+使用说明：
+1. 当前ABS播放器仅支持Windows系统，建议在Windows 10上运行。
+2. 下载ABS播放器后需要解压，解压路径不能包含中文字符。解压后，双击`ABSTool.exe`文件进行更新，然后即可使用。
+3. 获取ABS录制文件后，需要将ABS文件移动到`ABSTool/Replays`目录。如果没有Replays文件夹，请先启动一次`ABSTool.exe`。
 
-> Note that due to the player's requirements for machine-dependent libraries, if a black screen or blue screen appears after downloading and loading, you can try installing the runtime library to fix it. Runtime library path: [Runtime Library Download Address](https://drive.weixin.qq.com/s?k=AJEAIQdfAAoND6j4mw)
+> 注意，由于播放器对机器依赖库的要求，如果下载和加载后出现黑屏或蓝屏，可以尝试安装运行时库来修复。运行时库路径：[运行时库下载地址](https://drive.weixin.qq.com/s?k=AJEAIQdfAAoND6j4mw)
 
 ![alt text](./static/img/abs_file.png)
 
 ![alt text](./static/img/abs_scene.png)
 
-# Algorithms
+# 算法
 
-## Algorithm Access Simulation
-- The algorithm library refers to Pymarl2, source code: https://github.com/hijkzzz/pymarl2
+## 算法接入模拟
+- 算法库参考Pymarl2，源代码：https://github.com/hijkzzz/pymarl2
 
-- Common algorithms included in the algorithm library
-  - Value-based Methods: 
+- 算法库中包含的常见算法
+  - 基于价值的方法：
     - [QMIX: QMIX: Monotonic Value Function Factorisation for Deep Multi-Agent Reinforcement Learning](https://arxiv.org/abs/1803.11485)
     - [VDN: Value-Decomposition Networks For Cooperative Multi-Agent Learning](https://arxiv.org/abs/1706.05296)
     - [IQL: Independent Q-Learning](https://arxiv.org/abs/1511.08779)
@@ -227,35 +227,35 @@ Instructions for use:
     - [Qatten: Qatten: A general framework for cooperative multiagent reinforcement learning](https://arxiv.org/abs/2002.03939)
     - [QPLEX: Qplex: Duplex dueling multi-agent q-learning](https://arxiv.org/abs/2008.01062)
     - [WQMIX: Weighted QMIX: Expanding Monotonic Value Function Factorisation](https://arxiv.org/abs/2006.10800)
-  - Actor Critic Methods:
+  - Actor Critic方法：
     - [COMA: Counterfactual Multi-Agent Policy Gradients](https://arxiv.org/abs/1705.08926)
     - [VMIX: Value-Decomposition Multi-Agent Actor-Critics](https://arxiv.org/abs/2007.12306)
     - [LICA: Learning Implicit Credit Assignment for Cooperative Multi-Agent Reinforcement Learning](https://arxiv.org/abs/2007.02529)
     - [DOP: Off-Policy Multi-Agent Decomposed Policy Gradients](https://arxiv.org/abs/2007.12322)
     - [RIIT: Rethinking the Implementation Tricks and Monotonicity Constraint in Cooperative Multi-Agent Reinforcement Learning.](https://arxiv.org/abs/2102.03479)
 
-- How the algorithm interacts with the simulation environment
-  - In `./src/run/run.py`, the algorithm interacts with the simulation environment by calling `runner.run`
-  - The specific interaction part is in `./src/runners/episode_runner.py`, where the data obtained by sampling is stored in `ReplayBuffer`
-  - The sampling process is as follows:
-    - The `reset() function` in the environment interface file is called through `self.reset()`, sending a command to reset the simulation engine to the simulation, and initializing parameters
-    - In each frame of interaction, the global state is obtained by calling the `get_state() function` in the environment interface file, the executable actions of the intelligent agent are obtained by calling the `get_avail_actions() function`, and the respective observations of the intelligent agent are obtained by calling the `get_obs() function`
-    - The decision action of each intelligent agent is obtained through `self.mac.select_actions`
-    - The `step() function` in the environment interface file is called through `self.env.step`, and the decision action of the intelligent agent is sent to the simulation environment. The `act_2_cmd() function` is used to convert the action of the intelligent agent into a command executable by the simulation, so as to control the corresponding action of the intelligent agent in the engine
-    - The `step() function` returns the reward `reward` of the current frame and the training termination flag `terminated` to the algorithm
-  - Intelligent agent network update:
-    - In `./src/run/run.py`, use `buffer.sample(args.batch_size)` to sample `batch_size episodes` training data from `ReplayBuffer`
-    - `./src/learners` is the module for updating network parameters. The data is sent to the network for loss calculation and parameter update by calling `learner.train()` in `./src/run/run.py`
+- 算法如何与仿真环境交互
+  - 在`./src/run/run.py`中，算法通过调用`runner.run`与仿真环境交互
+  - 具体的交互部分在`./src/runners/episode_runner.py`中，采样获得的数据存储在`ReplayBuffer`中
+  - 采样过程如下：
+    - 通过`self.reset()`调用环境接口文件中的`reset()函数`，向仿真发送重置仿真引擎的命令，并初始化参数
+    - 在每一帧交互中，通过调用环境接口文件中的`get_state()函数`获得全局状态，通过调用`get_avail_actions()函数`获得智能体的可执行动作，通过调用`get_obs()函数`获得智能体各自的观察
+    - 通过`self.mac.select_actions`获得每个智能体的决策动作
+    - 通过`self.env.step`调用环境接口文件中的`step()函数`，将智能体的决策动作发送到仿真环境。使用`act_2_cmd()函数`将智能体的动作转换为仿真可执行的命令，从而控制引擎中智能体的相应动作
+    - `step()函数`向算法返回当前帧的奖励`reward`和训练终止标志`terminated`
+  - 智能体网络更新：
+    - 在`./src/run/run.py`中，使用`buffer.sample(args.batch_size)`从`ReplayBuffer`中采样`batch_size轮`训练数据
+    - `./src/learners`是更新网络参数的模块。通过在`./src/run/run.py`中调用`learner.train()`将数据发送到网络进行损失计算和参数更新
 
-## Sample Algorithm Experiment Results
-In the sample code, we tried to access VDN, QMIX, QATTEN, and QPLEX, these four cooperative multi-agent reinforcement learning algorithms. The experimental results are as follows:
+## 示例算法实验结果
+在示例代码中，我们尝试接入VDN、QMIX、QATTEN和QPLEX这四种协作多智能体强化学习算法。实验结果如下：
 ![alt text](./static/img/Episode.png)
-As can be seen from the above figure, as the training progresses, the remaining blood volume of the dragon becomes less and less, and the final performance of different algorithms is not consistent, reflecting the comparability of this environment to different algorithms.
+从上图可以看出，随着训练的进行，龙的剩余血量越来越少，不同算法的最终表现并不一致，体现了该环境对不同算法的可比性。
 
-We can obtain the abs file under the server `/sgame` path and perform visual analysis through the [ABS Player](#abs-player):
+我们可以在服务器`/sgame`路径下获取abs文件，并通过[ABS播放器](#abs-player)进行可视化分析：
 ![alt text](./static/img/abs_file.png)
 ![alt text](./static/img/abs_scene.png)
 
-We found that conventional cooperative multi-agent reinforcement learning can cause the auxiliary Zhuang Zhou not to make efforts to attack the tyrant, which may be due to the lazy agent phenomenon that has always existed in cooperative multi-agent algorithms: since all agents share team rewards, the role of auxiliary Zhuang Zhou is difficult to reflect, resulting in a phenomenon of muddling through.
+我们发现传统的协作多智能体强化学习可能导致辅助庄周不努力攻击暴君，这可能是由于协作多智能体算法中一直存在的懒惰智能体现象：由于所有智能体共享团队奖励，辅助庄周的作用难以体现，导致混水摸鱼的现象。
 
-This also shows that there is still room for improvement in the algorithm for the Mini King environment, and future researchers can design better algorithms to improve this phenomenon.
+这也表明算法在迷你王者环境中仍有改进空间，未来的研究人员可以设计更好的算法来改善这种现象。

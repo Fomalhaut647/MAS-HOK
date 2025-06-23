@@ -1,10 +1,9 @@
-
 from modules.agents import REGISTRY as agent_REGISTRY
 from components.action_selectors import REGISTRY as action_REGISTRY
 import torch as th
 
 
-# This multi-agent controller shares parameters between agents
+# 这个多智能体控制器在智能体之间共享参数
 class BasicMAC:
     def __init__(self, scheme, groups, args):
         self.n_agents = args.n_agents
@@ -19,7 +18,7 @@ class BasicMAC:
         self.hidden_states = None
 
     def select_actions(self, ep_batch, t_ep, t_env, bs=slice(None), test_mode=False):
-        # Only select actions for the selected batch elements in bs
+        # 仅为bs中选定的批次元素选择动作
         avail_actions = ep_batch["avail_actions"][:, t_ep]
         agent_outputs = self.forward(ep_batch, t_ep, test_mode=test_mode)
         chosen_actions = self.action_selector.select_action(agent_outputs[bs], avail_actions[bs], t_env, test_mode=test_mode)
@@ -32,11 +31,11 @@ class BasicMAC:
             self.agent.eval()
         agent_outs, self.hidden_states = self.agent(agent_inputs, self.hidden_states)
 
-        # Softmax the agent outputs if they're policy logits
+        # 如果智能体输出是策略logits，则进行softmax
         if self.agent_output_type == "pi_logits":
 
             if getattr(self.args, "mask_before_softmax", True):
-                # Make the logits for unavailable actions very negative to minimise their affect on the softmax
+                # 使不可用动作的logits变为非常负的值，以最小化它们对softmax的影响
                 agent_outs = agent_outs.reshape(ep_batch.batch_size * self.n_agents, -1)
                 reshaped_avail_actions = avail_actions.reshape(ep_batch.batch_size * self.n_agents, -1)
                 agent_outs[reshaped_avail_actions == 0] = -1e5
@@ -69,8 +68,8 @@ class BasicMAC:
         self.agent = agent_REGISTRY[self.args.agent](input_shape, self.args)
 
     def _build_inputs(self, batch, t):
-        # Assumes homogenous agents with flat observations.
-        # Other MACs might want to e.g. delegate building inputs to each agent
+        # 假设具有平坦观测的同质智能体。
+        # 其他MAC可能希望例如将构建输入委托给每个智能体
         bs = batch.batch_size
         inputs = []
         inputs.append(batch["obs"][:, t])  # b1av

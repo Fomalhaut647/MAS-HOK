@@ -19,18 +19,18 @@ from components.transforms import OneHot
 
 # def get_agent_own_state_size(env_args):
 #     sc_env = StarCraft2Env(**env_args)
-#     # qatten parameter setting (only use in qatten)
+#     # qatten 参数设置（仅在qatten中使用）
 #     return  4 + sc_env.shield_bits_ally + sc_env.unit_type_bits
 
 def run(_run, _config, _log):
 
-    # check args sanity
+    # 检查参数合理性
     _config = args_sanity_check(_config, _log)
 
     args = SN(**_config)
     args.device = "cuda" if args.use_cuda else "cpu"
 
-    # setup loggers
+    # 设置日志记录器
     logger = Logger(_log)
 
     _log.info("Experiment Parameters:")
@@ -39,7 +39,7 @@ def run(_run, _config, _log):
                                        width=1)
     _log.info("\n\n" + experiment_params + "\n")
 
-    # configure tensorboard logger
+    # 配置tensorboard日志记录器
     unique_token = "{}__{}".format(args.name, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
     args.unique_token = unique_token
     if args.use_tensorboard:
@@ -47,13 +47,13 @@ def run(_run, _config, _log):
         tb_exp_direc = os.path.join(tb_logs_direc, "{}").format(unique_token)
         logger.setup_tb(tb_exp_direc)
 
-    # sacred is on by default
+    # 默认开启sacred
     logger.setup_sacred(_run)
 
-    # Run and train
+    # 运行和训练
     run_sequential(args=args, logger=logger)
 
-    # Clean up after finishing
+    # 完成后清理
     print("Exiting Main")
 
     print("Stopping all threads")
@@ -65,7 +65,7 @@ def run(_run, _config, _log):
 
     print("Exiting script")
 
-    # Making sure framework really exits
+    # 确保框架真正退出
     os._exit(os.EX_OK)
 
 
@@ -85,10 +85,10 @@ def run_sequential(args, logger):
     current_time = datetime.now()
     cur_formatted_time = current_time.strftime("%Y-%m-%d %H:%M")
 
-    # Init runner so we can get env info
+    # 初始化runner以获取环境信息
     runner = r_REGISTRY[args.runner](args=args, logger=logger)
 
-    # Set up schemes and groups here
+    # 在这里设置schemes和groups
     env_info = runner.get_env_info()
     args.n_agents = env_info["n_agents"] # 智能体个数
     args.n_actions = env_info["n_actions"] # 动作空间
@@ -98,7 +98,7 @@ def run_sequential(args, logger):
     # if getattr(args, 'agent_own_state_size', False):
     #     args.agent_own_state_size = get_agent_own_state_size(args.env_args)
 
-    # Default/Base scheme
+    # 默认/基础 scheme
     scheme = {
         "state": {"vshape": env_info["state_shape"]},
         "obs": {"vshape": env_info["obs_shape"], "group": "agents"},
@@ -118,13 +118,13 @@ def run_sequential(args, logger):
     buffer = ReplayBuffer(scheme, groups, args.buffer_size, env_info["episode_limit"] + 1,
                           preprocess=preprocess,
                           device="cpu" if args.buffer_cpu_only else args.device)
-    # Setup multiagent controller here
+    # 在这里设置多智能体控制器
     mac = mac_REGISTRY[args.mac](buffer.scheme, groups, args)
 
-    # Give runner the scheme
+    # 给runner传递scheme
     runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
 
-    # Learner
+    # 学习器
     learner = le_REGISTRY[args.learner](mac, buffer.scheme, logger, args)
 
     if args.use_cuda:
@@ -139,18 +139,18 @@ def run_sequential(args, logger):
             logger.console_logger.info("Checkpoint directiory {} doesn't exist".format(args.checkpoint_path))
             return
 
-        # Go through all files in args.checkpoint_path
+        # 遍历args.checkpoint_path中的所有文件
         for name in os.listdir(args.checkpoint_path):
             full_name = os.path.join(args.checkpoint_path, name)
-            # Check if they are dirs the names of which are numbers
+            # 检查它们是否是名称为数字的目录
             if os.path.isdir(full_name) and name.isdigit():
                 timesteps.append(int(name))
 
         if args.load_step == 0:
-            # choose the max timestep
+            # 选择最大时间步
             timestep_to_load = 0 # max(timesteps)
         else:
-            # choose the timestep closest to load_step
+            # 选择最接近load_step的时间步
             timestep_to_load = min(timesteps, key=lambda x: abs(x - args.load_step))
 
         #model_path = os.path.join(args.checkpoint_path, str(timestep_to_load))
@@ -163,7 +163,7 @@ def run_sequential(args, logger):
             evaluate_sequential(args, runner)
             return
 
-    # start training
+    # 开始训练
     episode = 0
     last_test_T = -args.test_interval - 1
     last_log_T = 0
@@ -178,7 +178,7 @@ def run_sequential(args, logger):
 
     while runner.t_env <= args.t_max:
         print(f'Cur runner t_env is : {runner.t_env}, max is {args.t_max}, Cur episode is {episode}')
-        # Run for a whole episode at a time
+        # 每次运行一个完整的episode
         with th.no_grad():
             episode_batch, _ = runner.run(test_mode=False, cur_time=cur_formatted_time)
             buffer.insert_episode_batch(episode_batch)
@@ -190,7 +190,7 @@ def run_sequential(args, logger):
 
             episode_sample = buffer.sample(args.batch_size)
 
-            # Truncate batch to only filled timesteps
+            # 将批次截断到仅填充的时间步
             max_ep_t = episode_sample.max_t_filled()
             episode_sample = episode_sample[:, :max_ep_t]
 

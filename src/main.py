@@ -13,7 +13,7 @@ import yaml
 
 from run import REGISTRY as run_REGISTRY
 
-SETTINGS['CAPTURE_MODE'] = "fd" # set to "no" if you want to see stdout/stderr in console
+SETTINGS['CAPTURE_MODE'] = "fd" # 如果你想在控制台看到stdout/stderr，设置为"no"
 logger = get_logger()
 
 ex = Experiment("pymarl")
@@ -25,7 +25,7 @@ results_path = join(dirname(dirname(abspath(__file__))), "results")
 
 @ex.main
 def my_main(_run, _config, _log):
-    # Setting the random seed throughout the modules
+    # 在各个模块中设置随机种子
     config = config_copy(_config)
     np.random.seed(config["seed"])
     th.manual_seed(config["seed"])
@@ -84,24 +84,24 @@ def parse_command(params, key, default):
 if __name__ == '__main__':
     params = deepcopy(sys.argv)
 
-    # Get the defaults from default.yaml
+    # 从default.yaml获取默认配置
     with open(os.path.join(os.path.dirname(__file__), "config", "default.yaml"), "r") as f:
         try:
             config_dict = yaml.load(f, Loader = yaml.FullLoader)
         except yaml.YAMLError as exc:
             assert False, "default.yaml error: {}".format(exc)
 
-    # Load algorithm and env base configs
+    # 加载算法和环境基础配置
     env_config = _get_config(params, "--env-config", "envs")
     alg_config = _get_config(params, "--config", "algs")
     # config_dict = {**config_dict, **env_config, **alg_config}
     config_dict = recursive_dict_update(config_dict, env_config)
     config_dict = recursive_dict_update(config_dict, alg_config)
 
-    # now add all the config to sacred
+    # 现在将所有配置添加到sacred中
     ex.add_config(config_dict)
 
-    # Save to disk by default for sacred
+    # 默认情况下为sacred保存到磁盘
     map_name = parse_command(params, "env_args.map_name", config_dict['env_args']['map_name'])
     algo_name = parse_command(params, "name", config_dict['name']) 
     file_obs_path = join(results_path, "sacred", map_name, algo_name)
@@ -111,5 +111,5 @@ if __name__ == '__main__':
 
     ex.run_commandline(params)
 
-    # flush
+    # 刷新
     sys.stdout.flush()

@@ -54,37 +54,37 @@ class QattenMixer(nn.Module):
             state_embedding = self.query_embedding_layers[i](states)
             u_embedding = self.key_embedding_layers[i](us)
 
-            # shape: [-1, 1, state_dim]
+            # 形状: [-1, 1, state_dim]
             state_embedding = state_embedding.reshape(-1, 1, self.n_query_embedding_layer2)
-            # shape: [-1, state_dim, n_agent]
+            # 形状: [-1, state_dim, n_agent]
             u_embedding = u_embedding.reshape(-1, self.n_agents, self.n_key_embedding_layer1)
             u_embedding = u_embedding.permute(0, 2, 1)
 
-            # shape: [-1, 1, n_agent]
+            # 形状: [-1, 1, n_agent]
             raw_lambda = th.matmul(state_embedding, u_embedding) / self.scaled_product_value
             q_lambda = F.softmax(raw_lambda, dim=-1)
 
             q_lambda_list.append(q_lambda)
 
-        # shape: [-1, n_attention_head, n_agent]
+        # 形状: [-1, n_attention_head, n_agent]
         q_lambda_list = th.stack(q_lambda_list, dim=1).squeeze(-2)
 
-        # shape: [-1, n_agent, n_attention_head]
+        # 形状: [-1, n_agent, n_attention_head]
         q_lambda_list = q_lambda_list.permute(0, 2, 1)
 
-        # shape: [-1, 1, n_attention_head]
+        # 形状: [-1, 1, n_attention_head]
         q_h = th.matmul(agent_qs, q_lambda_list)
 
         if self.args.type == 'weighted':
-            # shape: [-1, n_attention_head, 1]
+            # 形状: [-1, n_attention_head, 1]
             w_h = th.abs(self.head_embedding_layer(states))
             w_h = w_h.reshape(-1, self.n_head_embedding_layer2, 1)
 
-            # shape: [-1, 1]
+            # 形状: [-1, 1]
             sum_q_h = th.matmul(q_h, w_h)
             sum_q_h = sum_q_h.reshape(-1, 1)
         else:
-            # shape: [-1, 1]
+            # 形状: [-1, 1]
             sum_q_h = q_h.sum(-1)
             sum_q_h = sum_q_h.reshape(-1, 1)
 

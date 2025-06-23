@@ -14,7 +14,7 @@ class Logger:
         self.stats = defaultdict(lambda: [])
 
     def setup_tb(self, directory_name):
-        # Import here so it doesn't have to be installed if you don't use it
+        # 在这里导入，这样如果不使用的话就不需要安装
         from tensorboard_logger import configure, log_value
         configure(directory_name)
         self.tb_logger = log_value
@@ -50,11 +50,11 @@ class Logger:
             log_str += "{:<25}{:>8}".format(k + ":", item)
             log_str += "\n" if i % 4 == 0 else "\t"
         self.console_logger.info(log_str)
-        # Reset stats to avoid accumulating logs in memory
+        # 重置统计信息以避免内存中日志的堆积
         self.stats = defaultdict(lambda: [])
 
 
-# set up a custom logger
+# 设置一个自定义日志记录器
 def get_logger():
     logger = logging.getLogger()
     logger.handlers = []

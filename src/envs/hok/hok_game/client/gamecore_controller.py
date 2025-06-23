@@ -14,7 +14,7 @@ from conf.config import GC_CONFIG
 
 class GameCoreController:
     """
-    GameCoreController 通过 http 请求给 ugc_game_core_server 启动/停止 gamecore
+    GameCoreController 通过 HTTP 请求给 ugc_game_core_server 启动/停止 gamecore
     """
     def __init__(self, game_id, logger, battlesrv_port):
         self.game_id = game_id
@@ -28,10 +28,10 @@ class GameCoreController:
 
     def start_game(self):
         """
-            Description: 发送 http 请求给 ugc_game_core_server 启动 gamecore
+            描述: 发送 HTTP 请求给 ugc_game_core_server 启动 gamecore
             ----------
 
-            Return: 成功返回 True, 重试超时失败返回 False
+            返回: 成功返回 True, 重试超时失败返回 False
             ----------
         """
         new_game_req = {
@@ -44,7 +44,7 @@ class GameCoreController:
         endpoint_url = f"http://{self.game_core_server_endpoint}/ugc/newGame"
 
         try:
-            # gamecore 确保返回 ok 时是一定启动成功的, 增加重试次数
+            # gamecore 确保返回 OK 时是一定启动成功的, 增加重试次数
             resp = requests.post(url=endpoint_url, json=new_game_req)
             retry_times = 0
             while retry_times < self.retry_times and resp.status_code != 200:
@@ -66,10 +66,10 @@ class GameCoreController:
 
     def stop_game(self):
         """
-            Description: 发送 http 请求给 ugc_game_core_server 停止gamecore
+            描述: 发送 HTTP 请求给 ugc_game_core_server 停止gamecore
             ----------
 
-            Return: 成功返回 True, 重试超时失败返回 False
+            返回: 成功返回 True, 重试超时失败返回 False
             ----------
         """
         stop_game_req = {

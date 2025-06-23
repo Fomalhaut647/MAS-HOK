@@ -26,7 +26,7 @@ class EpisodeRunner:
         self.train_stats = {}
         self.test_stats = {}
 
-        # Log the first run
+        # 记录第一次运行
         self.log_train_stats_t = -1000000
 
     def setup(self, scheme, groups, preprocess, mac):
@@ -72,12 +72,12 @@ class EpisodeRunner:
             }
             self.batch.update(pre_transition_data, ts=self.t)
 
-            # Pass the entire batch of experiences up till now to the agents
-            # Receive the actions for each agent at this timestep in a batch of size 1
+            # 将目前为止的整个经验批次传递给智能体
+            # 在大小为1的批次中接收每个智能体在此时间步的动作
             actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
            
             #actions = actions[0] # for ippo
-            # Fix memory leak
+            # 修复内存泄漏
             cpu_actions = actions[0].to("cpu").numpy()
 
             # 这是跟环境交互的最重要的一步
@@ -126,9 +126,9 @@ class EpisodeRunner:
         } # last_data应该没有作用，这个是充数的
         self.batch.update(last_data, ts=self.t)
 
-        # Select actions in the last stored state
+        # 在最后一个存储状态中选择动作
         actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
-        # Fix memory leak
+        # 修复内存泄漏
         cpu_actions = actions.to("cpu").numpy()
         self.batch.update({"actions": cpu_actions}, ts=self.t)
         

@@ -122,16 +122,16 @@ class EpsilonGreedyActionSelector():
 
     def select_action(self, agent_inputs, avail_actions, t_env, test_mode=False):
 
-        # Assuming agent_inputs is a batch of Q-Values for each agent bav
+        # 假设agent_inputs是每个智能体的Q值批次 bav
         self.epsilon = self.schedule.eval(t_env)
 
         if test_mode:
-            # Greedy action selection only
+            # 仅贪婪动作选择
             self.epsilon  = getattr(self.args, "test_noise", 0.0)
 
-        # mask actions that are excluded from selection
+        # 屏蔽被排除的动作
         masked_q_values = agent_inputs.clone()
-        masked_q_values[avail_actions == 0] = -float("inf")  # should never be selected!
+        masked_q_values[avail_actions == 0] = -float("inf")  # 永远不应该被选中！
         
         random_numbers = th.rand_like(agent_inputs[:, :, 0])
         pick_random = (random_numbers < self.epsilon).long()
@@ -151,7 +151,7 @@ class GaussianActionSelector():
         self.test_greedy = getattr(args, "test_greedy", True)
 
     def select_action(self, mu, sigma, test_mode=False):
-        # Expects the following input dimensions:
+        # 期望以下输入维度：
         # mu: [b x a x u]
         # sigma: [b x a x u x u]
         assert mu.dim() == 3, "incorrect input dim: mu"

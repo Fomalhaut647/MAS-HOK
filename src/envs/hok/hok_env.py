@@ -1,4 +1,3 @@
-
 import path, sys
 from pathlib import Path
 folder = path.Path(__file__).abspath()
@@ -71,7 +70,7 @@ class HokEnv(MultiAgentEnv, NatureClient):
         # self.battles_game = 0
 
     def get_obs(self):
-        """Returns all agent observations in a list.
+        """返回所有智能体观测的列表。
             启动游戏拿到当前帧的信息
             所有Agent的Obs是(5,6)的张量
             先拿到当前帧的画面,然后读取坐标信息
@@ -83,22 +82,22 @@ class HokEnv(MultiAgentEnv, NatureClient):
         return self.obs[agent_id].reshape(-1)
 
     def get_obs_size(self):
-        '''return the size of the observation'''
+        '''返回观测的大小'''
         return self.observation_space
 
     def get_global_state(self):
         return self.obs.flatten()
 
     def get_state(self):
-        """Returns the global state."""
+        """返回全局状态。"""
         return self.get_global_state()
 
     def get_state_size(self):
-        """Returns the size of the global state."""
+        """返回全局状态的大小。"""
         return self.get_obs_size() * self.n_agents
 
     def get_avail_actions(self):
-        """Returns the available actions of all agents in a list."""
+        """返回所有智能体可用动作的列表。"""
         ## 现在加入技能之后,并不是所有的技能都能使用,5678技能键要判断calm_down==0,如果为0才是1
         all_actor_legal_skill = []
         for hero in self.heroes:
@@ -114,17 +113,17 @@ class HokEnv(MultiAgentEnv, NatureClient):
         return all_actor_legal_skill
     
     def get_avail_agent_actions(self, agent_id):
-        """Returns the available actions for agent_id."""
+        """返回agent_id的可用动作。"""
         return self.get_avail_actions()[agent_id]
 
     def get_total_actions(self):
-        """Returns the total number of actions an agent could ever take"""
+        """返回智能体可能执行的动作总数"""
         return self.action_space
         
     def reset(self, if_test=False, args=None, cur_time=None):
-        """Reset the environment. Required after each full episode.
-           Returns initial observations and states. 
-           Starting game in every episode phase of sampling
+        """重置环境。在每个完整episode后必须调用。
+           返回初始观测和状态。 
+           在采样的每个episode阶段开始游戏
         """
         # self.battles_won = 0
         # self.battles_game = 0
@@ -571,7 +570,7 @@ class HokEnv(MultiAgentEnv, NatureClient):
         return cmd_list, stop_game
 
     def step(self, _actions, if_test=False):
-        """ Returns reward, terminated, info """
+        """ 返回奖励、终止状态、信息 """
         if th.is_tensor(_actions):
             #actions = _actions.cpu.numpy()
             actions = [int(a) for a in _actions]
@@ -709,7 +708,7 @@ class HokEnv(MultiAgentEnv, NatureClient):
         pass
 
     def close(self):
-        '''close honor of kings game'''
+        '''关闭王者荣耀游戏'''
         pass
 
     def seed(self):

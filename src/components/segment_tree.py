@@ -1,29 +1,24 @@
 import operator
 
 
-# Directly from OpenAI Baseline implementation (https://github.com/openai/baselines)
+# 直接来自OpenAI Baseline实现 (https://github.com/openai/baselines)
 class SegmentTree(object):
     def __init__(self, capacity, operation, neutral_element):
-        """Build a Segment Tree data structure.
+        """构建线段树数据结构。
         https://en.wikipedia.org/wiki/Segment_tree
-        Can be used as regular array, but with two
-        important differences:
-            a) setting item's value is slightly slower.
-               It is O(lg capacity) instead of O(1).
-            b) user has access to an efficient ( O(log segment size) )
-               `reduce` operation which reduces `operation` over
-               a contiguous subsequence of items in the array.
-        Paramters
+        可以像常规数组一样使用，但有两个重要差异：
+            a) 设置项目值稍慢。时间复杂度为O(lg capacity)而不是O(1)。
+            b) 用户可以访问高效的（O(log segment size)）
+               `reduce`操作，该操作在数组的连续子序列上执行`operation`。
+        参数
         ---------
         capacity: int
-            Total size of the array - must be a power of two.
+            数组的总大小 - 必须是2的幂。
         operation: lambda obj, obj -> obj
-            and operation for combining elements (eg. sum, max)
-            must form a mathematical group together with the set of
-            possible values for array elements (i.e. be associative)
+            用于组合元素的操作（例如sum、max）
+            必须与数组元素的可能值集合形成数学群（即满足结合律）
         neutral_element: obj
-            neutral element for the operation above. eg. float('-inf')
-            for max and 0 for sum.
+            上述操作的中性元素。例如max的float('-inf')和sum的0。
         """
         assert capacity > 0 and capacity & (capacity - 1) == 0, "capacity must be positive and a power of 2."
         self._capacity = capacity
@@ -46,19 +41,18 @@ class SegmentTree(object):
                 )
 
     def reduce(self, start=0, end=None):
-        """Returns result of applying `self.operation`
-        to a contiguous subsequence of the array.
+        """返回对数组连续子序列应用`self.operation`的结果。
             self.operation(arr[start], operation(arr[start+1], operation(... arr[end])))
-        Parameters
+        参数
         ----------
         start: int
-            beginning of the subsequence
+            子序列的开始位置
         end: int
-            end of the subsequences
-        Returns
+            子序列的结束位置
+        返回
         -------
         reduced: obj
-            result of reducing self.operation over the specified range of array elements.
+            在指定数组元素范围上应用self.operation的结果。
         """
         if end is None:
             end = self._capacity
@@ -68,7 +62,7 @@ class SegmentTree(object):
         return self._reduce_helper(start, end, 1, 0, self._capacity - 1)
 
     def __setitem__(self, idx, val):
-        # index of the leaf
+        # 叶子节点的索引
         idx += self._capacity
         self._value[idx] = val
         idx //= 2
@@ -97,23 +91,22 @@ class SumSegmentTree(SegmentTree):
         return super(SumSegmentTree, self).reduce(start, end)
 
     def find_prefixsum_idx(self, prefixsum):
-        """Find the highest index `i` in the array such that
+        """找到数组中满足条件的最高索引`i`，使得
             sum(arr[0] + arr[1] + ... + arr[i - i]) <= prefixsum
-        if array values are probabilities, this function
-        allows to sample indexes according to the discrete
-        probability efficiently.
-        Parameters
+        如果数组值是概率，这个函数
+        允许根据离散概率高效地采样索引。
+        参数
         ----------
         perfixsum: float
-            upperbound on the sum of array prefix
-        Returns
+            数组前缀和的上界
+        返回
         -------
         idx: int
-            highest index satisfying the prefixsum constraint
+            满足前缀和约束的最高索引
         """
         assert 0 <= prefixsum <= self.sum() + 1e-5
         idx = 1
-        while idx < self._capacity:  # while non-leaf
+        while idx < self._capacity:  # 当非叶子节点时
             if self._value[2 * idx] > prefixsum:
                 idx = 2 * idx
             else:

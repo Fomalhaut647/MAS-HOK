@@ -3,11 +3,11 @@ from torch import nn
 
 def clip_by_tensor(t,t_min,t_max):
     """
-    clip_by_tensor
-    :param t: tensor
-    :param t_min: min
-    :param t_max: max
-    :return: cliped tensor
+    按张量裁剪
+    :param t: 张量
+    :param t_min: 最小值
+    :param t_max: 最大值
+    :return: 裁剪后的张量
     """
     t=t.float()
     t_min=t_min.float()
