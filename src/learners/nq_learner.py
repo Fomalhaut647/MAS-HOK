@@ -81,16 +81,16 @@ class NQLearner:
                 target_agent_outs = self.target_mac.forward(batch, t=t)
                 target_mac_out.append(target_agent_outs)
 
-            # We don't need the first timesteps Q-Value estimate for calculating targets
-            target_mac_out = th.stack(target_mac_out, dim=1)  # Concat across time
+            # 我们不需要第一个时间步的Q值估计来计算目标
+            target_mac_out = th.stack(target_mac_out, dim=1)  # 在时间维度上拼接
 
-            # Max over target Q-Values/ Double q learning
+            # 对目标Q值取最大值 / 双Q学习
             mac_out_detach = mac_out.clone().detach()
             mac_out_detach[avail_actions == 0] = -9999999
             cur_max_actions = mac_out_detach.max(dim=3, keepdim=True)[1]
             target_max_qvals = th.gather(target_mac_out, 3, cur_max_actions).squeeze(3)
             
-            # Calculate n-step Q-Learning targets
+            # 计算n步Q学习目标
             target_max_qvals = self.target_mixer(target_max_qvals, batch["state"])
 
             if getattr(self.args, 'q_lambda', False):
@@ -103,7 +103,7 @@ class NQLearner:
                 targets = build_td_lambda_targets(rewards, terminated, mask, target_max_qvals, 
                                                     self.args.n_agents, self.args.gamma, self.args.td_lambda)
 
-        # Mixer
+        # 混合器
         chosen_action_qvals = self.mixer(chosen_action_qvals, batch["state"][:, :-1])
 
         td_error = (chosen_action_qvals - targets.detach())
@@ -112,14 +112,14 @@ class NQLearner:
         mask = mask.expand_as(td_error2)
         masked_td_error = td_error2 * mask
 
-        # important sampling for PER
+        # PER的重要性采样
         if self.use_per:
             per_weight = th.from_numpy(per_weight).unsqueeze(-1).to(device=self.device)
             masked_td_error = masked_td_error.sum(1) * per_weight
 
         loss = L_td = masked_td_error.sum() / mask.sum()
 
-        # Optimise
+        # 优化
         self.optimiser.zero_grad()
         loss.backward()
         grad_norm = th.nn.utils.clip_grad_norm_(self.params, self.args.grad_norm_clip)
@@ -139,13 +139,13 @@ class NQLearner:
             self.log_stats_t = t_env
             
 
-        # return info
+        # 返回信息
         info = {}
-        # calculate priority
+        # 计算优先级
         if self.use_per:
             if self.return_priority:
                 info["td_errors_abs"] = rewards.sum(1).detach().to('cpu')
-                # normalize to [0, 1]
+                # 归一化到[0, 1]
                 self.priority_max = max(th.max(info["td_errors_abs"]).item(), self.priority_max)
                 self.priority_min = min(th.min(info["td_errors_abs"]).item(), self.priority_min)
                 info["td_errors_abs"] = (info["td_errors_abs"] - self.priority_min) \
