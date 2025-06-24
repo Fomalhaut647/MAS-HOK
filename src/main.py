@@ -16,7 +16,7 @@ from run import REGISTRY as run_REGISTRY
 SETTINGS['CAPTURE_MODE'] = "fd" # 如果你想在控制台看到stdout/stderr，设置为"no"
 logger = get_logger()
 
-ex = Experiment("pymarl")
+ex = Experiment("pymarl", save_git_info=False)
 ex.logger = logger
 ex.captured_out_filter = apply_backspaces_and_linefeeds
 

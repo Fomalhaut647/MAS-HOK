@@ -174,3 +174,6 @@ pyrightconfig.json
 test.py
 
 license.dat
+
+results/models/
+results/sacred/hok/vdn_env/**/cout.txt
