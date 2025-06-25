@@ -1,0 +1,11 @@
+Experiment Analysis Summary - VDN
+==================================================
+File: 2025-06-25 14:07_monster_lasthp_avdn_env.txt
+Algorithm: VDN
+Timestamp: 2025-06-25 14:07 monster
+Total Evaluations: 6667
+Win Rate: 0.01%
+Average Remaining HP: 14045
+Average Damage Dealt: 15955
+Damage Efficiency: 0.532
+Stability Score: 0.807

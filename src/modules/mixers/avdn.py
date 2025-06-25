@@ -24,27 +24,34 @@ class AVDNMixer(nn.Module):
         self.state_dim = int(np.prod(args.state_shape))
         self.mixing_embed_dim = getattr(args, 'mixing_embed_dim', 32)
         
-        # 注意力网络：从全局状态生成每个智能体的重要性权重
-        # 网络结构: state_dim -> mixing_embed_dim -> n_agents
+        # 使用更保守的网络结构提高训练稳定性
         self.attention_net = nn.Sequential(
             nn.Linear(self.state_dim, self.mixing_embed_dim),
             nn.ReLU(),
+            nn.Dropout(0.1),  # 添加Dropout防止过拟合
             nn.Linear(self.mixing_embed_dim, self.n_agents)
         )
+        
+        # 可学习的温度参数，控制注意力分布的尖锐程度
+        self.temperature = nn.Parameter(th.ones(1))
+        
+        # 残差连接权重，平衡注意力机制和简单加法
+        self.residual_weight = nn.Parameter(th.tensor(0.5))
         
         # 初始化网络参数
         self._init_weights()
     
     def _init_weights(self):
-        """初始化网络参数，使用Xavier uniform初始化"""
+        """初始化网络参数，使用更保守的初始化方法"""
         for layer in self.attention_net:
             if isinstance(layer, nn.Linear):
-                nn.init.xavier_uniform_(layer.weight)
+                # 使用更小的初始化范围，提高训练稳定性
+                nn.init.xavier_uniform_(layer.weight, gain=0.5)
                 nn.init.zeros_(layer.bias)
     
     def forward(self, agent_qs, states):
         """
-        前向传播
+        前向传播 - 改进版本，提高训练稳定性
         
         Args:
             agent_qs: 智能体Q值, shape: (batch_size, seq_len, n_agents)
@@ -63,8 +70,12 @@ class AVDNMixer(nn.Module):
         # shape: (batch_size * seq_len, n_agents)
         attention_scores = self.attention_net(states_reshaped)
         
-        # 应用softmax获得归一化的注意力权重，确保权重非负且和为1
-        # 这满足了IGM（Individual-Global-Max）原则
+        # 使用温度参数调节注意力分布的尖锐程度
+        # 温度越高，分布越平滑；温度越低，分布越集中
+        temperature = th.clamp(self.temperature, min=0.1, max=2.0)  # 限制温度范围
+        attention_scores = attention_scores / temperature
+        
+        # 应用softmax获得归一化的注意力权重
         # shape: (batch_size * seq_len, n_agents)
         attention_weights = F.softmax(attention_scores, dim=-1)
         
@@ -72,12 +83,16 @@ class AVDNMixer(nn.Module):
         # shape: (batch_size, seq_len, n_agents)
         attention_weights = attention_weights.reshape(batch_size, seq_len, n_agents)
         
-        # 将智能体Q值与对应的注意力权重相乘
+        # 计算注意力加权的Q值
         # shape: (batch_size, seq_len, n_agents)
         weighted_agent_qs = agent_qs * attention_weights
+        attention_q_tot = th.sum(weighted_agent_qs, dim=2, keepdim=True)
         
-        # 在智能体维度上求和得到最终的团队Q值
-        # shape: (batch_size, seq_len, 1)
-        q_tot = th.sum(weighted_agent_qs, dim=2, keepdim=True)
+        # 计算简单加法的Q值（类似VDN）
+        vdn_q_tot = th.sum(agent_qs, dim=2, keepdim=True)
+        
+        # 使用残差连接结合两种方法，提高训练稳定性
+        residual_weight = th.sigmoid(self.residual_weight)  # 确保权重在[0,1]之间
+        q_tot = residual_weight * attention_q_tot + (1 - residual_weight) * vdn_q_tot
         
         return q_tot 

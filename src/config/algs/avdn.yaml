@@ -29,12 +29,15 @@ mixer: "avdn"  # 使用Attention-VDN混合器
 # A-VDN特有的超参数
 mixing_embed_dim: 32  # 注意力网络的隐藏层维度
 
-# 其他网络超参数
+# 其他网络超参数  
 hypernet_embed: 64
-lr: 0.001  # 智能体学习率
+lr: 0.0005  # 降低学习率提高训练稳定性
 td_lambda: 0.6
 optimizer: 'adam'
 q_lambda: False
+
+# 梯度裁剪，防止梯度爆炸
+grad_norm_clip: 5.0
 
 # 算法名称
 name: "avdn_env" 
