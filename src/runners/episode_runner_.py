@@ -1,5 +1,5 @@
 ###
-# 这个程序是改进版的 episode_runner.py，增加了复杂的奖励塑形
+# 这个程序是基础版的 episode_runner.py
 ###
 
 from envs import REGISTRY as env_REGISTRY
@@ -30,7 +30,7 @@ class EpisodeRunner:
         self.train_stats = {}
         self.test_stats = {}
 
-        # Log the first run
+        # 记录第一次运行
         self.log_train_stats_t = -1000000
 
     def setup(self, scheme, groups, preprocess, mac):
@@ -76,86 +76,21 @@ class EpisodeRunner:
             }
             self.batch.update(pre_transition_data, ts=self.t)
 
-            # Pass the entire batch of experiences up till now to the agents
-            # Receive the actions for each agent at this timestep in a batch of size 1
+            # 将目前为止的整个经验批次传递给智能体
+            # 在大小为1的批次中接收每个智能体在此时间步的动作
             actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
            
             #actions = actions[0] # for ippo
-            # Fix memory leak
+            # 修复内存泄漏
             cpu_actions = actions[0].to("cpu").numpy()
 
             # 这是跟环境交互的最重要的一步
             reward, terminated, env_info = self.env.step(actions[0], if_test=test_mode)
-            original_reward = reward
-
-            # 2. 攻击激励 (来源于PDF的思路)
-            NORMAL_ATTACK_IDS = [4]
-            SKILL_ATTACK_IDS = [5, 6, 7, 8]
-            
-            num_normal_attacks = 0 # k
-            num_skill_attacks = 0  # m
-            num_lazy_agents = 0    # 统计“懒惰”的智能体
-
-            # actions[0] 是一个包含所有智能体动作ID的张量
-            for action in actions[0]:
-                action_id = action.item()
-                if action_id in NORMAL_ATTACK_IDS:
-                    num_normal_attacks += 1
-                elif action_id in SKILL_ATTACK_IDS:
-                    num_skill_attacks += 1
-                else: # 既不普攻也不技能，就算“懒惰”
-                    num_lazy_agents += 1
-
-            # 根据PDF第12页的描述，设定奖励 shaping 的参数
-            alpha = 1.1
-            beta = 1.2
-            
-            # 计算带有攻击激励的奖励
-            attack_shaped_reward = original_reward * (alpha**num_normal_attacks) * (beta**num_skill_attacks)
-
-            # --- 初始化最终奖励 ---
-            final_shaped_reward = attack_shaped_reward
-            
-            # --- 3. 生存激励 ---
-            # 只要游戏没结束，就给予微小的生存奖励，鼓励英雄存活
-            SURVIVAL_BONUS = 0.01 # 可调超参数
-            if not terminated:
-                final_shaped_reward += SURVIVAL_BONUS
-
-            # --- 4. 协作激励 与 懒惰惩罚 ---
-            # 获取所有英雄的观测信息，其中包含了位置坐标
-            all_obs = self.env.get_obs()
-            
-            # 懒惰惩罚: 每有一个英雄“挂机”，就给予一个小的惩罚
-            LAZY_PENALTY = -0.02 # 可调超参数
-            final_shaped_reward += num_lazy_agents * LAZY_PENALTY
-
-            # 协作激励: 鼓励辅助(Agent 0, 庄周)靠近射手(Agent 1, 狄仁杰)
-            try:
-                # 假设 Agent 0 是庄周, Agent 1 是狄仁杰
-                zhuangzhou_obs = all_obs[0]
-                direnjie_obs = all_obs[1]
-                
-                # 观测的前两位是 x, z 坐标
-                zhuangzhou_pos = zhuangzhou_obs[:2]
-                direnjie_pos = direnjie_obs[:2]
-                
-                # 计算欧氏距离
-                distance = np.linalg.norm(zhuangzhou_pos - direnjie_pos)
-                
-                COOP_DISTANCE_THRESHOLD = 2000 # 可调超参数，代表希望他们保持的距离
-                COOP_BONUS = 0.05 # 可调超参数
-
-                if distance < COOP_DISTANCE_THRESHOLD:
-                    # 距离够近，给予协作奖励
-                    final_shaped_reward += COOP_BONUS
-            except IndexError:
-                # 以防万一有英雄阵亡，导致列表越界
-                pass
+           
             episode_return += reward
             post_transition_data = {
                 "actions": cpu_actions,
-                "reward": [(final_shaped_reward,)],
+                "reward": [(reward,)],
                 "terminated": [(terminated != env_info.get("episode_limit", False),)],
             }
             self.batch.update(post_transition_data, ts=self.t)
@@ -195,9 +130,9 @@ class EpisodeRunner:
         } # last_data应该没有作用，这个是充数的
         self.batch.update(last_data, ts=self.t)
 
-        # Select actions in the last stored state
+        # 在最后一个存储状态中选择动作
         actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
-        # Fix memory leak
+        # 修复内存泄漏
         cpu_actions = actions.to("cpu").numpy()
         self.batch.update({"actions": cpu_actions}, ts=self.t)
         

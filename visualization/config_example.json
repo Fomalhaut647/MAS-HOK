@@ -1,0 +1,23 @@
+{
+  "_comment": "可视化工具配置文件示例",
+  "dir": "results/sacred/hok/monster_last_hp",
+  "pattern": "*monster_lasthp*.txt",
+  "initial_hp": 30000,
+  "output": "./visualization_results",
+  "format": "png",
+  "compare": true,
+  "save_report": true,
+  "algorithm": "all",
+  "latest": 5,
+  "_instructions": {
+    "dir": "结果文件目录路径",
+    "pattern": "文件匹配模式",
+    "initial_hp": "怪物初始血量",
+    "output": "输出目录",
+    "format": "输出格式 (png/pdf/svg)",
+    "compare": "是否启用比较模式",
+    "save_report": "是否保存详细报告",
+    "algorithm": "算法筛选 (vdn/qmix/qatten/qplex/all)",
+    "latest": "选择最新N个文件"
+  }
+} 
