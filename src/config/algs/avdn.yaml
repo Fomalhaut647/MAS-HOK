@@ -1,0 +1,40 @@
+# --- A-VDN (Attention-VDN) 特定参数 ---
+
+# 使用epsilon贪婪动作选择器
+action_selector: "epsilon_greedy"
+epsilon_start: 1.0
+epsilon_finish: 0.05
+epsilon_anneal_time: 100000  # 探索衰减时间步数
+
+# 运行器配置
+runner: "episode"
+batch_size_run: 1
+buffer_size: 5000
+batch_size: 64
+optimizer: 'adam'
+
+t_max: 1000000
+
+# 每隔{}回合更新目标网络
+target_update_interval: 200
+
+# 使用Q_Learner进行训练
+mac: "n_mac"
+agent: "n_rnn"
+agent_output_type: q
+
+learner: "nq_learner"
+mixer: "avdn"  # 使用Attention-VDN混合器
+
+# A-VDN特有的超参数
+mixing_embed_dim: 32  # 注意力网络的隐藏层维度
+
+# 其他网络超参数
+hypernet_embed: 64
+lr: 0.001  # 智能体学习率
+td_lambda: 0.6
+optimizer: 'adam'
+q_lambda: False
+
+# 算法名称
+name: "avdn_env" 

@@ -176,5 +176,5 @@ test.py
 license.dat
 
 results/models/
-results/sacred/hok/vdn_env/**/cout.txt
+results/sacred/hok/**/cout.txt
 models.tar.gz
