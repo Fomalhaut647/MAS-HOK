@@ -6,11 +6,6 @@
 
 在腾讯多智能体迷你环境中，你需要通过算法训练多个英雄与野怪战斗。任务结束时，野怪的剩余血量将作为评估指标。在开发指南中，我们提供了如何将VDN、QMIX、QATTEN和QPLEX四种算法集成到环境中的示例，并展示了一些实验结果。最后，代码包中提供了VDN的示例代码。
 
-## 新闻
-[2025/4]Docker镜像安装地址变更。
-
-[2025/2]修复了庄周资源加载错误导致无法正确响应动作的问题。
-
 ---
 
 ## 环境介绍
@@ -44,14 +39,247 @@
 
 ---
 
+## 代码结构
+
+### 项目整体架构
+
+本项目基于PyTorch和Sacred构建，参考了SMAC环境的代码实现。整体架构采用模块化设计，便于扩展和维护。
+
+```
+MAS-HOK/
+├── src/                          # 主要源代码目录
+│   ├── main.py                   # 程序入口，处理配置和启动训练
+│   ├── config/                   # 配置文件目录
+│   │   ├── default.yaml          # 默认配置参数
+│   │   ├── algs/                 # 算法配置
+│   │   │   ├── vdn.yaml          # VDN算法配置
+│   │   │   └── avdn.yaml         # AVDN算法配置
+│   │   └── envs/                 # 环境配置
+│   ├── envs/                     # 环境相关代码
+│   │   ├── multiagentenv.py      # 多智能体环境基类
+│   │   └── hok/                  # 王者荣耀环境实现
+│   │       ├── hok_env.py        # 环境主类，实现多智能体交互接口
+│   │       └── hok_game/         # 游戏核心模块
+│   │           ├── client/       # 客户端通信
+│   │           ├── conf/         # 配置文件
+│   │           ├── agent/        # 智能体相关
+│   │           └── protocol/     # 通信协议
+│   ├── controllers/              # 智能体控制器
+│   │   ├── basic_controller.py   # 基础多智能体控制器
+│   │   └── n_controller.py       # N智能体控制器
+│   ├── modules/                  # 神经网络模块
+│   │   ├── agents/               # 智能体网络
+│   │   │   └── n_rnn_agent.py    # RNN智能体网络
+│   │   └── mixers/               # 价值函数混合网络
+│   │       ├── vdn.py            # VDN混合器
+│   │       ├── nmix.py           # N-Mix混合器
+│   │       └── qatten.py         # Q-Attention混合器
+│   ├── learners/                 # 学习器模块
+│   │   └── nq_learner.py         # Q学习训练器
+│   ├── runners/                  # 运行器模块
+│   │   └── episode_runner.py     # 回合运行器，处理采样和交互
+│   ├── components/               # 组件模块
+│   │   ├── episode_buffer.py     # 经验回放缓冲区
+│   │   ├── action_selectors.py   # 动作选择器（epsilon-greedy等）
+│   │   ├── epsilon_schedules.py  # epsilon衰减策略
+│   │   └── transforms.py         # 数据变换工具
+│   ├── run/                      # 训练运行逻辑
+│   │   └── run.py                # 主训练循环
+│   └── utils/                    # 工具函数
+│       ├── logging.py            # 日志工具
+│       ├── rl_utils.py           # 强化学习工具
+│       └── th_utils.py           # PyTorch工具
+├── docs/                         # 文档目录
+│   └── CODE_GUIDE.md             # 详细开发指南
+├── results/                      # 训练结果保存目录
+├── static/                       # 静态资源（图片等）
+├── requirements.txt              # Python依赖包
+├── train.sh                      # 训练启动脚本
+├── license.dat                   # 环境许可证文件
+└── README.md                     # 项目说明文档
+```
+
+### 核心模块说明
+
+#### 1. 环境模块 (`src/envs/`)
+- **`hok_env.py`**: 核心环境类，继承`MultiAgentEnv`和`NatureClient`
+  - 实现标准的多智能体环境接口：`reset()`, `step()`, `get_obs()`, `get_state()`
+  - 处理与GameCore服务器的通信
+  - 状态空间：每个智能体观测维度为6（位置+血量信息）
+  - 动作空间：13维（8个移动方向+5个技能动作）
+
+- **`hok_game/`**: 游戏核心通信模块
+  - `client/gamecore_controller.py`: 控制GameCore服务器的启动和停止
+  - `conf/gamecore_conf.json`: 服务器IP和端口配置
+  - `protocol/`: 定义与游戏引擎通信的协议
+
+#### 2. 智能体控制器 (`src/controllers/`)
+- **`basic_controller.py`**: 多智能体行动控制器
+  - 管理所有智能体的动作选择
+  - 支持训练和测试模式的切换
+  - 处理动作掩码和可用动作
+
+#### 3. 神经网络模块 (`src/modules/`)
+- **`agents/n_rnn_agent.py`**: RNN智能体网络
+  - 使用GRU处理序列信息
+  - 支持观测历史和动作历史的编码
+
+- **`mixers/`**: 价值函数分解网络
+  - `vdn.py`: Value Decomposition Network
+  - `nmix.py`: 通用混合网络
+  - `qatten.py`: 基于注意力机制的混合网络
+
+#### 4. 学习器模块 (`src/learners/`)
+- **`nq_learner.py`**: Q学习训练器
+  - 实现价值函数的更新
+  - 支持目标网络和经验回放
+  - 计算TD误差和损失函数
+
+#### 5. 运行器模块 (`src/runners/`)
+- **`episode_runner.py`**: 回合运行器
+  - 执行环境交互循环
+  - 收集训练数据到经验缓冲区
+  - 处理回合终止和重置
+
+#### 6. 组件模块 (`src/components/`)
+- **`episode_buffer.py`**: 经验回放缓冲区
+  - 存储回合数据
+  - 支持批量采样
+  - 处理变长序列数据
+
+- **`action_selectors.py`**: 动作选择策略
+  - epsilon-greedy策略
+  - 软最大策略
+  - 支持探索衰减
+
+### 数据流和交互机制
+
+```mermaid
+graph TD
+    A[main.py] --> B[run.py]
+    B --> C[episode_runner.py]
+    C --> D[hok_env.py]
+    D --> E[GameCore服务器]
+    C --> F[basic_controller.py]
+    F --> G[n_rnn_agent.py]
+    C --> H[episode_buffer.py]
+    B --> I[nq_learner.py]
+    I --> J[价值混合网络]
+    
+    style A fill:#e1f5fe
+    style E fill:#ffebee
+    style J fill:#f3e5f5
+```
+
+#### 训练流程
+1. **环境初始化**: `main.py`加载配置，启动训练流程
+2. **回合执行**: `episode_runner.py`控制环境交互
+3. **状态获取**: 通过`hok_env.py`从GameCore获取游戏状态
+4. **动作选择**: `basic_controller.py`调用智能体网络选择动作
+5. **环境更新**: 将动作发送到GameCore执行
+6. **数据存储**: 经验数据存入`episode_buffer.py`
+7. **网络更新**: `nq_learner.py`从缓冲区采样数据更新网络
+
+#### 配置系统
+- 使用YAML格式配置文件
+- 分层配置：默认配置 + 环境配置 + 算法配置
+- 支持命令行参数覆盖配置
+
+### 快速开始开发指南
+
+#### 关键配置文件说明
+```yaml
+# src/config/default.yaml - 基础配置
+runner: "episode"           # 使用回合运行器
+env: "hok"                 # 使用王者荣耀环境
+batch_size: 32             # 训练批次大小
+lr: 0.0005                 # 学习率
+gamma: 0.99                # 折扣因子
+```
+
+```yaml
+# src/config/algs/vdn.yaml - VDN算法配置
+agent: "rnn"               # 使用RNN智能体
+mac: "basic_mac"           # 使用基础控制器
+mixer: "vdn"               # 使用VDN价值混合
+```
+
+```json
+// src/envs/hok/hok_game/conf/gamecore_conf.json - 游戏服务器配置
+{
+    "endpoint": "127.0.0.1:3030",    // GameCore服务器地址
+    "battlesrv_port": 5555,          // 战斗服务端口
+    "level_name": "PVE_1_1"          // 关卡名称
+}
+```
+
+#### 核心接口说明
+
+**环境接口** (`src/envs/hok/hok_env.py`):
+```python
+class HokEnv(MultiAgentEnv, NatureClient):
+    def reset(self):
+        """重置环境，返回初始观测"""
+        
+    def step(self, actions):
+        """执行动作，返回 (reward, terminated, info)"""
+        
+    def get_obs(self):
+        """获取所有智能体的观测 [5 x 6]"""
+        
+    def get_state(self):
+        """获取全局状态 [30]"""
+        
+    def get_avail_actions(self):
+        """获取可用动作掩码 [5 x 13]"""
+```
+
+**智能体网络** (`src/modules/agents/n_rnn_agent.py`):
+```python
+class NRNNAgent(nn.Module):
+    def __init__(self, input_shape, args):
+        """
+        input_shape: 观测维度 + 动作历史 + 智能体ID
+        args.rnn_hidden_dim: RNN隐藏层维度
+        args.n_actions: 动作空间大小
+        """
+        
+    def forward(self, inputs, hidden_state):
+        """
+        前向传播计算Q值
+        返回: (q_values, new_hidden_state)
+        """
+```
+
+#### 添加新算法步骤
+
+1. **创建算法配置**: 在`src/config/algs/`添加新的YAML配置文件
+2. **实现混合网络**: 在`src/modules/mixers/`添加新的价值混合网络
+3. **修改学习器**: 在`src/learners/`中实现特定的学习逻辑
+4. **注册组件**: 在相应的`__init__.py`文件中注册新组件
+
+#### 调试和监控
+
+- **日志系统**: 使用`src/utils/logging.py`进行结构化日志记录
+- **Sacred实验**: 实验配置和结果自动保存到`results/sacred/`
+- **模型检查点**: 训练模型保存在`results/models/`
+- **TensorBoard**: 设置`use_tensorboard: True`启用可视化
+
+#### 常见问题排查
+
+1. **GameCore连接失败**: 检查`gamecore_conf.json`中的IP配置
+2. **GPU内存不足**: 设置`buffer_cpu_only: True`
+3. **收敛慢**: 调整学习率`lr`和批次大小`batch_size`
+4. **动作无效**: 检查`get_avail_actions()`返回的动作掩码
+
+---
+
 ## 环境使用
 
 ### 安装要求
-> 如果使用Linux系统，可以忽略安装要求，直接进行下一步
 
-1. Windows 10/11
-2. Python 3.8或更高版本
-3. Docker。如果你的电脑上没有安装Docker，请按照[指南](#docker)完成安装。
+1. Python 3.8或更高版本
+2. Docker
 
 ### 申请许可证
 请填写[腾讯AI竞技场多智能体迷你任务环境许可证申请表](https://docs.qq.com/form/page/DVGR3Vk9Jb29lRW9H)。
@@ -134,84 +362,7 @@ python3 src/main.py --config="vdn" --env-config="hok" with "env_args.map_name=ho
 # 其中--config参数后跟相应的算法，目前支持VDN算法
 ```
 
-# 工具安装
-
-## Docker
-
-下面我们将介绍如何在Windows系统上安装和使用Docker。有关Docker的更多信息，请参考[Docker官方文档](https://docs.docker.com/)。
-
-**1. 下载安装包**
-
-官方下载链接：https://www.docker.com/get-started/
-
-**2. 安装**
-
-2.1 打开下载的安装包，使用默认选项进行安装。
-
-![alt text](./static/img/docker_install1.png)
-
-2.2 安装完成后，在桌面上打开Docker Desktop客户端。第一次运行时，需要点击[Accept]同意协议，然后点击[Skip]跳过Docker调查，之后就可以开始运行。
-
-![alt text](./static/img/docker_install2.png)
-![alt text](./static/img/docker_install3.png)
-
-2.3 打开Docker并等待一段时间，可以在左下角看到Docker状态为运行中，表示Docker已成功启动。
-
-![alt text](./static/img/docker_running.png) alt="docker_running" width="50%"
-
-**3. 更新WSL 2内核**
-
-如果在第一次运行Docker后看到以下提示，需要更新WSL 2内核。请按照以下步骤操作
-
-![alt text](./static/img/docker_install4.png) 
-
-3.1 访问弹窗中提示的网站（中文页面，可以[点击这里查看](https://docs.microsoft.com/zh-cn/windows/wsl/install-manual#step-4---download-the-linux-kernel-update-package)），在打开的页面中找到第4步，下载如下所示的安装包。
-  ![alt text](./static/img/wsl-1.png)
-
-3.2 下载完成后，运行WSL安装包。
-  ![alt text](./static/img/wsl-2.png)
-  ![alt text](./static/img/wsl-3.png)
-
-3.3 安装完成后，点击Finish。
-  ![alt text](./static/img/wsl-4.png)
-
-3.4 打开Windows系统终端。你可以按`Windows键 + R`组合键打开运行窗口，在运行窗口中输入`cmd`并按回车，Windows系统终端将打开。（或者，你可以在电脑左下角的搜索框中搜索"命令提示符"，然后点击搜索结果进入终端。）
-
-![alt text](./static/img/wsl-6.png)
-
-3.5 将WSL 2设置为默认版本。复制下面的命令，然后将复制的代码粘贴到终端中并按回车。此时，你将在终端中看到操作成功的消息。
-
-```powershell
-wsl --set-default-version 2
-```
-
-![alt text](./static/img/wsl-8.png)
-
-3.6 最后，执行WSL更新。同样，在终端中输入下面的命令并按回车完成操作。（**注意：此操作必须在Windows 11系统上执行**）
-
-```powershell
-wsl --update
-```
-
-有关WSL 2的更多信息，请参考[微软官方文档](https://docs.microsoft.com/zh-cn/windows/wsl/install-manual)。
-
 ---
-
-## ABS播放器
-使用模型完成评估任务后，将生成ABS录制文件。ABS播放文件可以使用腾讯开悟提供的ABS播放器进行查看和可视化分析。
-
-[ABS播放器下载地址](https://drive.weixin.qq.com/s?k=AJEAIQdfAAomyhtflp)
-
-使用说明：
-1. 当前ABS播放器仅支持Windows系统，建议在Windows 10上运行。
-2. 下载ABS播放器后需要解压，解压路径不能包含中文字符。解压后，双击`ABSTool.exe`文件进行更新，然后即可使用。
-3. 获取ABS录制文件后，需要将ABS文件移动到`ABSTool/Replays`目录。如果没有Replays文件夹，请先启动一次`ABSTool.exe`。
-
-> 注意，由于播放器对机器依赖库的要求，如果下载和加载后出现黑屏或蓝屏，可以尝试安装运行时库来修复。运行时库路径：[运行时库下载地址](https://drive.weixin.qq.com/s?k=AJEAIQdfAAoND6j4mw)
-
-![alt text](./static/img/abs_file.png)
-
-![alt text](./static/img/abs_scene.png)
 
 # 算法
 
@@ -252,7 +403,7 @@ wsl --update
 ![alt text](./static/img/Episode.png)
 从上图可以看出，随着训练的进行，龙的剩余血量越来越少，不同算法的最终表现并不一致，体现了该环境对不同算法的可比性。
 
-我们可以在服务器`/sgame`路径下获取abs文件，并通过[ABS播放器](#abs-player)进行可视化分析：
+我们可以在服务器`/sgame`路径下获取abs文件，并通过 **ABS播放器** 进行可视化分析：
 ![alt text](./static/img/abs_file.png)
 ![alt text](./static/img/abs_scene.png)
 
