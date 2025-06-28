@@ -106,10 +106,10 @@ class EpisodeRunner:
                 else: # 既不普攻也不技能，就算"懒惰"
                     num_lazy_agents += 1
 
-            # 根据PDF第12页的描述，设定奖励 shaping 的参数 - 优化后的超参数
-            # 增加攻击激励强度，减少懒惰智能体现象
-            alpha = 1.3  # 从1.1增加到1.3，增强普攻激励
-            beta = 1.5   # 从1.2增加到1.5，增强技能攻击激励
+            # 根据PDF第12页的描述，设定奖励 shaping 的参数 - 更保守的优化
+            # 适度增加攻击激励，但避免过于激进
+            alpha = 1.15  # 从1.3减少到1.15，更温和的普攻激励
+            beta = 1.25   # 从1.5减少到1.25，更温和的技能攻击激励
             
             # 计算带有攻击激励的奖励
             attack_shaped_reward = original_reward * (alpha**num_normal_attacks) * (beta**num_skill_attacks)
@@ -119,7 +119,7 @@ class EpisodeRunner:
             
             # --- 3. 生存激励 ---
             # 只要游戏没结束，就给予微小的生存奖励，鼓励英雄存活
-            SURVIVAL_BONUS = 0.005  # 从0.01减少到0.005，避免过度鼓励生存而忽略攻击
+            SURVIVAL_BONUS = 0.008  # 从0.005增加到0.008，保持适度的生存激励
             if not terminated:
                 final_shaped_reward += SURVIVAL_BONUS
 
@@ -127,8 +127,8 @@ class EpisodeRunner:
             # 获取所有英雄的观测信息，其中包含了位置坐标
             all_obs = self.env.get_obs()
             
-            # 懒惰惩罚: 每有一个英雄"挂机"，就给予一个较大的惩罚 - 增强惩罚
-            LAZY_PENALTY = -0.05  # 从-0.02增加到-0.05，更严厉惩罚懒惰行为
+            # 懒惰惩罚: 每有一个英雄"挂机"，就给予适度惩罚 - 减少惩罚强度
+            LAZY_PENALTY = -0.03  # 从-0.05减少到-0.03，避免过度惩罚
             final_shaped_reward += num_lazy_agents * LAZY_PENALTY
 
             # 协作激励: 鼓励辅助(Agent 0, 庄周)靠近射手(Agent 1, 狄仁杰)
@@ -144,32 +144,40 @@ class EpisodeRunner:
                 # 计算欧氏距离
                 distance = np.linalg.norm(zhuangzhou_pos - direnjie_pos)
                 
-                COOP_DISTANCE_THRESHOLD = 1500  # 从2000减少到1500，鼓励更紧密协作
-                COOP_BONUS = 0.08  # 从0.05增加到0.08，增强协作奖励
+                COOP_DISTANCE_THRESHOLD = 1800  # 从1500增加到1800，放宽协作距离要求
+                COOP_BONUS = 0.06  # 从0.08减少到0.06，适度的协作奖励
 
                 if distance < COOP_DISTANCE_THRESHOLD:
                     # 距离够近，给予协作奖励
                     final_shaped_reward += COOP_BONUS
                     
-                # 额外奖励：如果庄周在协作距离内且进行攻击
+                # 额外奖励：如果庄周在协作距离内且进行攻击 - 减少奖励强度
                 if distance < COOP_DISTANCE_THRESHOLD:
                     zhuangzhou_action = actions[0][0].item()  # 庄周的动作
                     if zhuangzhou_action in NORMAL_ATTACK_IDS + SKILL_ATTACK_IDS:
-                        ACTIVE_COOP_BONUS = 0.1  # 新增：积极协作奖励
+                        ACTIVE_COOP_BONUS = 0.04  # 从0.1减少到0.04，更温和的积极协作奖励
                         final_shaped_reward += ACTIVE_COOP_BONUS
                         
             except IndexError:
                 # 以防万一有英雄阵亡，导致列表越界
                 pass
                 
-            # --- 5. 新增：团队攻击协调奖励 ---
-            # 如果多个智能体同时攻击，给予额外奖励
-            if num_normal_attacks + num_skill_attacks >= 3:  # 至少3个智能体攻击
-                TEAM_ATTACK_BONUS = 0.12  # 团队攻击奖励
+            # --- 5. 简化团队攻击协调奖励 ---
+            # 如果多个智能体同时攻击，给予适度奖励
+            total_attackers = num_normal_attacks + num_skill_attacks
+            if total_attackers >= 4:  # 至少4个智能体攻击
+                TEAM_ATTACK_BONUS = 0.05  # 从0.12减少到0.05，更保守的团队奖励
                 final_shaped_reward += TEAM_ATTACK_BONUS
-            elif num_normal_attacks + num_skill_attacks >= 2:  # 至少2个智能体攻击
-                TEAM_ATTACK_BONUS = 0.06  # 较小的团队攻击奖励
+            elif total_attackers >= 3:  # 至少3个智能体攻击
+                TEAM_ATTACK_BONUS = 0.03  # 从0.06减少到0.03，更保守的团队奖励
                 final_shaped_reward += TEAM_ATTACK_BONUS
+                
+            # --- 6. 新增：逐步递减的探索奖励 ---
+            # 在训练早期给予更多探索奖励，后期逐渐减少
+            if not test_mode and self.t_env < 50000:  # 前50000步
+                exploration_factor = max(0, (50000 - self.t_env) / 50000)
+                EXPLORATION_BONUS = 0.002 * exploration_factor
+                final_shaped_reward += EXPLORATION_BONUS
 
             episode_return += reward
             post_transition_data = {
