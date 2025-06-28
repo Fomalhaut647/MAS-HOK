@@ -74,7 +74,7 @@ class EpisodeRunner:
                 "avail_actions": [self.env.get_avail_actions()],
                 "obs": [self.env.get_obs()]
             }
-            self.batch.update(pre_transition_data, ts=self.t)
+            self.batch.update(pre_transition_data, ts=slice(self.t, self.t + 1))
 
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch of size 1
@@ -88,13 +88,13 @@ class EpisodeRunner:
             reward, terminated, env_info = self.env.step(actions[0], if_test=test_mode)
             original_reward = reward
 
-            # 2. 攻击激励 (来源于PDF的思路)
+            # 2. 攻击激励 (来源于PDF的思路) - 优化超参数
             NORMAL_ATTACK_IDS = [4]
             SKILL_ATTACK_IDS = [5, 6, 7, 8]
             
             num_normal_attacks = 0 # k
             num_skill_attacks = 0  # m
-            num_lazy_agents = 0    # 统计“懒惰”的智能体
+            num_lazy_agents = 0    # 统计"懒惰"的智能体
 
             # actions[0] 是一个包含所有智能体动作ID的张量
             for action in actions[0]:
@@ -103,12 +103,13 @@ class EpisodeRunner:
                     num_normal_attacks += 1
                 elif action_id in SKILL_ATTACK_IDS:
                     num_skill_attacks += 1
-                else: # 既不普攻也不技能，就算“懒惰”
+                else: # 既不普攻也不技能，就算"懒惰"
                     num_lazy_agents += 1
 
-            # 根据PDF第12页的描述，设定奖励 shaping 的参数
-            alpha = 1.1
-            beta = 1.2
+            # 根据PDF第12页的描述，设定奖励 shaping 的参数 - 优化后的超参数
+            # 增加攻击激励强度，减少懒惰智能体现象
+            alpha = 1.3  # 从1.1增加到1.3，增强普攻激励
+            beta = 1.5   # 从1.2增加到1.5，增强技能攻击激励
             
             # 计算带有攻击激励的奖励
             attack_shaped_reward = original_reward * (alpha**num_normal_attacks) * (beta**num_skill_attacks)
@@ -118,7 +119,7 @@ class EpisodeRunner:
             
             # --- 3. 生存激励 ---
             # 只要游戏没结束，就给予微小的生存奖励，鼓励英雄存活
-            SURVIVAL_BONUS = 0.01 # 可调超参数
+            SURVIVAL_BONUS = 0.005  # 从0.01减少到0.005，避免过度鼓励生存而忽略攻击
             if not terminated:
                 final_shaped_reward += SURVIVAL_BONUS
 
@@ -126,8 +127,8 @@ class EpisodeRunner:
             # 获取所有英雄的观测信息，其中包含了位置坐标
             all_obs = self.env.get_obs()
             
-            # 懒惰惩罚: 每有一个英雄“挂机”，就给予一个小的惩罚
-            LAZY_PENALTY = -0.02 # 可调超参数
+            # 懒惰惩罚: 每有一个英雄"挂机"，就给予一个较大的惩罚 - 增强惩罚
+            LAZY_PENALTY = -0.05  # 从-0.02增加到-0.05，更严厉惩罚懒惰行为
             final_shaped_reward += num_lazy_agents * LAZY_PENALTY
 
             # 协作激励: 鼓励辅助(Agent 0, 庄周)靠近射手(Agent 1, 狄仁杰)
@@ -143,22 +144,40 @@ class EpisodeRunner:
                 # 计算欧氏距离
                 distance = np.linalg.norm(zhuangzhou_pos - direnjie_pos)
                 
-                COOP_DISTANCE_THRESHOLD = 2000 # 可调超参数，代表希望他们保持的距离
-                COOP_BONUS = 0.05 # 可调超参数
+                COOP_DISTANCE_THRESHOLD = 1500  # 从2000减少到1500，鼓励更紧密协作
+                COOP_BONUS = 0.08  # 从0.05增加到0.08，增强协作奖励
 
                 if distance < COOP_DISTANCE_THRESHOLD:
                     # 距离够近，给予协作奖励
                     final_shaped_reward += COOP_BONUS
+                    
+                # 额外奖励：如果庄周在协作距离内且进行攻击
+                if distance < COOP_DISTANCE_THRESHOLD:
+                    zhuangzhou_action = actions[0][0].item()  # 庄周的动作
+                    if zhuangzhou_action in NORMAL_ATTACK_IDS + SKILL_ATTACK_IDS:
+                        ACTIVE_COOP_BONUS = 0.1  # 新增：积极协作奖励
+                        final_shaped_reward += ACTIVE_COOP_BONUS
+                        
             except IndexError:
                 # 以防万一有英雄阵亡，导致列表越界
                 pass
+                
+            # --- 5. 新增：团队攻击协调奖励 ---
+            # 如果多个智能体同时攻击，给予额外奖励
+            if num_normal_attacks + num_skill_attacks >= 3:  # 至少3个智能体攻击
+                TEAM_ATTACK_BONUS = 0.12  # 团队攻击奖励
+                final_shaped_reward += TEAM_ATTACK_BONUS
+            elif num_normal_attacks + num_skill_attacks >= 2:  # 至少2个智能体攻击
+                TEAM_ATTACK_BONUS = 0.06  # 较小的团队攻击奖励
+                final_shaped_reward += TEAM_ATTACK_BONUS
+
             episode_return += reward
             post_transition_data = {
                 "actions": cpu_actions,
                 "reward": [(final_shaped_reward,)],
                 "terminated": [(terminated != env_info.get("episode_limit", False),)],
             }
-            self.batch.update(post_transition_data, ts=self.t)
+            self.batch.update(post_transition_data, ts=slice(self.t, self.t + 1))
             self.t += 1
             #print(f'self.t {self.t}, terminated {terminated}')
 
@@ -193,13 +212,13 @@ class EpisodeRunner:
             "avail_actions": [self.env.get_avail_actions()],
             "obs": [self.env.get_obs()]
         } # last_data应该没有作用，这个是充数的
-        self.batch.update(last_data, ts=self.t)
+        self.batch.update(last_data, ts=slice(self.t, self.t + 1))
 
         # Select actions in the last stored state
         actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
         # Fix memory leak
         cpu_actions = actions.to("cpu").numpy()
-        self.batch.update({"actions": cpu_actions}, ts=self.t)
+        self.batch.update({"actions": cpu_actions}, ts=slice(self.t, self.t + 1))
         
         cur_stats = self.test_stats if test_mode else self.train_stats
         
