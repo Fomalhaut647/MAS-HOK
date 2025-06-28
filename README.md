@@ -410,3 +410,42 @@ python3 src/main.py --config="vdn" --env-config="hok" with "env_args.map_name=ho
 我们发现传统的协作多智能体强化学习可能导致辅助庄周不努力攻击暴君，这可能是由于协作多智能体算法中一直存在的懒惰智能体现象：由于所有智能体共享团队奖励，辅助庄周的作用难以体现，导致混水摸鱼的现象。
 
 这也表明算法在迷你王者环境中仍有改进空间，未来的研究人员可以设计更好的算法来改善这种现象。
+
+
+
+# 复现与改进
+## 复现（baseline config & baseline）
+首先，我们依照 README 的教程，复现了传统 VDN 算法。除了照着教程配环境，还在 `src/main.py` 第 19 行设置了 `save_git_info=False` 以避免 git 报错
+
+Average Remaining HP: 13638
+
+## 增加可视化（add visualization）
+添加 visualize_results.py 脚本，用于可视化训练过程中敌人血量的变化等
+
+## 增加激励（algorithm update）
+增加攻击激励、生存激励、协作激励、懒惰惩罚
+
+Average Remaining HP: 13495
+
+## 改进 VDN 为 A-VDN（add A-VDN）
+在 VDN 的基础上，为每个智能体添加一个可以学习的权重，从而改进为 A-VDN 算法
+
+Average Remaining HP: 15997
+
+## 改进可视化（add A-VDN debug visualization）
+改进可视化脚本，现在可以比较不同参数训练出来的模型的区别了
+
+## 改进 A-VDN（improve A-VDN）
+添加Dropout防止过拟合，使用更保守的网络结构提高训练稳定性，使用更保守的初始化方法，使用温度参数调节注意力分布的尖锐程度，使用残差连接提高稳定性
+
+Average Remaining HP: 14045
+
+## 激励调参（Refine reward shaping and fix type errors）
+调整激励的超参数，增大攻击激励等激励，增大懒惰惩罚
+
+Average Remaining HP: 15098 （更差了，悲）
+
+## 激励调参（Adjust reward shaping; add decaying exploration）
+降低激励
+
+Average Remaining HP: 16005 （更差了，悲）
